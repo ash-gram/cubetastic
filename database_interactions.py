@@ -22,7 +22,11 @@ CREATE TABLE IF NOT EXISTS solves (
 CREATE INDEX IF NOT EXISTS solves_owner_session ON solves(user_id, session, id);
 CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY, user_id TEXT, title TEXT, message TEXT, created_at INTEGER);
 CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, expires INTEGER NOT NULL);
-PRAGMA user_version=1;
+CREATE TABLE IF NOT EXISTS oauth_identities (
+ provider TEXT NOT NULL, subject TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ email TEXT NOT NULL, PRIMARY KEY(provider,subject), UNIQUE(provider,user_id)
+);
+PRAGMA user_version=2;
 '''
 
 def connect(path):

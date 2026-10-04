@@ -25,6 +25,9 @@ def create_app(config=None):
         SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE', '1') == '1',
         SESSION_COOKIE_SAMESITE='Lax', PERMANENT_SESSION_LIFETIME=timedelta(days=14),
         MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+        GOOGLE_CLIENT_ID=os.environ.get('GOOGLE_CLIENT_ID', ''),
+        GOOGLE_CLIENT_SECRET=os.environ.get('GOOGLE_CLIENT_SECRET', ''),
+        GOOGLE_REDIRECT_URI='https://cubetastic.duckdns.org/auth/google/callback',
     )
     if config:
         app.config.update(config)
@@ -49,8 +52,13 @@ def create_app(config=None):
     def public_user(user):
         if user is None:
             return None
-        return dict(uid=user['id'], username=user['username'], displayName=user['username'],
-                    email=user['email'], **json.loads(user['profile']))
+        profile = json.loads(user['profile'])
+        google = get_db().execute("SELECT email FROM oauth_identities WHERE provider='google' AND user_id=?", (user['id'],)).fetchone()
+        return dict(uid=user['id'], username=user['username'],
+                    displayName=profile.get('display_name') or user['username'],
+                    email=user['email'], has_password=bool(user['password_hash']),
+                    google_linked=bool(google), google_email=google['email'] if google else None,
+                    **profile)
 
     def rate_limit(name, maximum, seconds=900):
         now = int(time.time())
@@ -176,7 +184,7 @@ def create_app(config=None):
         if not isinstance(candidate, str) or len(candidate) > 256:
             abort(400, 'Invalid password.')
         user = get_db().execute('SELECT * FROM users WHERE username=? COLLATE NOCASE OR email=? COLLATE NOCASE', (username, username)).fetchone()
-        stored = user['password_hash'] if user else app.config['DUMMY_PASSWORD_HASH']
+        stored = user['password_hash'] if user and user['password_hash'] else app.config['DUMMY_PASSWORD_HASH']
         valid = check_password_hash(stored, candidate)
         if user is None or not valid:
             abort(401, 'Incorrect username/email or password.')
@@ -213,9 +221,17 @@ def create_app(config=None):
     def profile_update():
         uid = require_user()
         data = payload()
-        profile = {field: text(data, field, 500) for field in ('phone', 'location', 'bio')}
-        with get_db() as db:
-            db.execute('UPDATE users SET profile=? WHERE id=?', (json.dumps(profile), uid))
+        profile = json.loads(g.user['profile'])
+        profile.update({field: text(data, field, 500) for field in ('phone', 'location', 'bio')})
+        profile['display_name'] = text(data, 'display_name', 100)
+        username = text(data, 'username', 32) or g.user['username']
+        if not re.fullmatch(r'[A-Za-z0-9_\-]{3,32}', username):
+            abort(400, 'Use 3-32 letters, numbers, underscores or hyphens for your username.')
+        try:
+            with get_db() as db:
+                db.execute('UPDATE users SET username=?,profile=? WHERE id=?', (username, json.dumps(profile), uid))
+        except sqlite3.IntegrityError:
+            abort(409, 'That username is already taken.')
         return jsonify(ok=True)
 
     @app.post('/api/password')
@@ -223,6 +239,8 @@ def create_app(config=None):
         uid = require_user()
         rate_limit('password', 10)
         data = payload()
+        if not g.user['password_hash']:
+            abort(400, 'Your account signs in through Google. Manage your password in your Google account.')
         current = data.get('current_password', '')
         if not isinstance(current, str) or len(current) > 256 or not check_password_hash(g.user['password_hash'], current):
             abort(401, 'Incorrect current password.')
@@ -337,4 +355,6 @@ def create_app(config=None):
         return send_from_directory(ROOT / directory, filename)
 
     app.config['DUMMY_PASSWORD_HASH'] = generate_password_hash(secrets.token_urlsafe(24))
+    from google_auth import init_google
+    init_google(app, sign_in, rate_limit)
     return app

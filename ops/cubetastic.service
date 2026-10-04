@@ -6,9 +6,10 @@ User=cubetastic
 Group=cubetastic
 WorkingDirectory=/opt/cubetastic/current
 EnvironmentFile=/etc/cubetastic/app.env
+EnvironmentFile=-/etc/cubetastic/google.env
 EnvironmentFile=/opt/cubetastic/current/release.env
 Environment=PYTHONDONTWRITEBYTECODE=1
-ExecStart=/opt/cubetastic/current/.venv/bin/gunicorn --bind 127.0.0.1:8033 --workers 2 --threads 2 --timeout 60 --access-logfile - --error-logfile - wsgi:app
+ExecStart=/opt/cubetastic/current/.venv/bin/gunicorn --bind 127.0.0.1:8033 --workers 2 --threads 2 --timeout 60 --access-logfile - --access-logformat "%%(h)s %%(m)s %%(U)s %%(s)s" --error-logfile - wsgi:app
 Restart=on-failure
 RestartSec=5
 UMask=0077

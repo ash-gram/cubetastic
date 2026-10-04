@@ -3,6 +3,8 @@
 {% block body %}
 <link rel="stylesheet" href="/css/accounts.css">
 <section class="account-card"><h1>Create your account</h1><p>Your solves and settings sync to this Cubetastic server.</p>
+{% include 'auth-notices.html' %}
+{% if google_enabled %}<a class="google-button" href="/auth/google/start"><img src="/images/google_logo.png" width="20" height="20" alt="">Continue with Google</a><div class="auth-divider"><span>or use email</span></div>{% endif %}
 <form onsubmit="submitAccount(event, '/api/signup')">
 <label for="username">Username</label><input id="username" name="username" autocomplete="username" minlength="3" maxlength="32" pattern="[A-Za-z0-9_\-]{3,32}" required>
 <label for="email">Email</label><input id="email" name="email" type="email" autocomplete="email" maxlength="254" required>

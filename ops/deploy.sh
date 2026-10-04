@@ -23,6 +23,8 @@ failed() {
     if [[ -n $previous && -d $previous ]]; then
       ln -sfn "$previous" /opt/cubetastic/next
       mv -Tf /opt/cubetastic/next /opt/cubetastic/current
+      install -m 644 "$previous/ops/cubetastic.service" /etc/systemd/system/cubetastic.service
+      systemctl daemon-reload
       systemctl restart cubetastic || true
     else systemctl stop cubetastic || true; fi
   fi
@@ -47,6 +49,8 @@ if [[ -f /var/lib/cubetastic/cubetastic.sqlite3 ]]; then python3 "$release/ops/b
 ln -sfn "$release" /opt/cubetastic/next
 mv -Tf /opt/cubetastic/next /opt/cubetastic/current
 activated=1
+install -m 644 "$release/ops/cubetastic.service" /etc/systemd/system/cubetastic.service
+systemctl daemon-reload
 systemctl restart cubetastic
 healthy=0
 for attempt in $(seq 1 30); do

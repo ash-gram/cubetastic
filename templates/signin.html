@@ -3,6 +3,8 @@
 {% block body %}
 <link rel="stylesheet" href="/css/accounts.css">
 <section class="account-card"><h1>Welcome back</h1><p>Sign in to sync your solves across devices.</p>
+{% include 'auth-notices.html' %}
+{% if google_enabled %}<a class="google-button" href="/auth/google/start"><img src="/images/google_logo.png" width="20" height="20" alt="">Continue with Google</a><div class="auth-divider"><span>or use email</span></div>{% endif %}
 <form onsubmit="submitAccount(event, '/api/login')">
 <label for="username">Username or email</label><input id="username" name="username" autocomplete="username" required>
 <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
