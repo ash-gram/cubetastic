@@ -10,8 +10,9 @@ install -d -m 750 -o cubetastic -g cubetastic /var/lib/cubetastic
 install -d -m 700 /etc/cubetastic /var/backups/cubetastic
 install -d -m 755 /opt/cubetastic/releases /var/www/cubetastic-acme
 if [[ ! -s /etc/cubetastic/app.env ]]; then
-  umask 077
+  (umask 077
   python3 -c 'import secrets; print("SECRET_KEY="+secrets.token_urlsafe(48)); print("DATABASE_PATH=/var/lib/cubetastic/cubetastic.sqlite3\nCOOKIE_SECURE=1\nTRUST_PROXY=1")' > /etc/cubetastic/app.env
+  )
 fi
 install -m 644 ops/cubetastic.service /etc/systemd/system/cubetastic.service
 install -m 644 ops/cubetastic-deploy.service ops/cubetastic-deploy.timer ops/cubetastic-backup.service ops/cubetastic-backup.timer /etc/systemd/system/

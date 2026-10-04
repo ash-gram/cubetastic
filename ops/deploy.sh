@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+umask 022
 exec 9>/run/lock/cubetastic-deploy.lock
 flock -n 9 || exit 0
 source_dir=/opt/cubetastic/source
@@ -41,6 +42,7 @@ for script in main profile loggedStatus timer; do node --check "$release/js/$scr
 bash -n "$release/ops/deploy.sh" "$release/ops/bootstrap.sh"
 chown -R root:root "$release"
 chmod -R go-w "$release"
+runuser -u cubetastic -- "$release/.venv/bin/gunicorn" --version
 if [[ -f /var/lib/cubetastic/cubetastic.sqlite3 ]]; then python3 "$release/ops/backup.py"; fi
 ln -sfn "$release" /opt/cubetastic/next
 mv -Tf /opt/cubetastic/next /opt/cubetastic/current
