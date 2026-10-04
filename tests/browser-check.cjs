@@ -50,6 +50,15 @@ const base = process.env.BASE_URL || 'http://127.0.0.1:5093';
     await second.close();
   }
   await page.screenshot({path:'.artifacts/timer.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base + '/signup');
+  await page.locator('h1').waitFor({state:'visible'});
+  const titleBox = await page.locator('h1').boundingBox();
+  const headerBox = await page.locator('.mdc-top-app-bar').boundingBox();
+  assert(titleBox.y >= headerBox.y + headerBox.height, 'Mobile header overlaps the signup title');
+  assert(!(await page.locator('body').innerText()).includes('cubetastic33@gmail.com'));
+  await page.screenshot({path:'.artifacts/mobile-signup.png',fullPage:true});
+  console.log('Mobile signup layout and independent attribution passed');
   assert.deepEqual(errors, []);
   await browser.close();
   console.log('No browser script errors');

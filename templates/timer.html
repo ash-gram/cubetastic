@@ -530,7 +530,7 @@
         do I import solves?</h2>
         <div class="mdc-dialog__content"><h3>Import from csTimer</h3>
           <video id="importInfoVideo" class="video-js vjs-big-play-centered vjs-16-9" controls
-                 preload="auto" data-setup="{}">
+                 preload="none" data-setup="{}">
             <source src="/videos/cubetastic_import_solves.webm" type='video/webm'>
             <source src="/videos/cubetastic_import_solves.mp4" type='video/mp4'>
             <source src="/videos/cubetastic_import_solves.ogg" type='video/ogg'>
@@ -540,7 +540,7 @@
           </video>
           <h3>Import from Twisty Timer</h3>
           <video id="twistyTimerVideo" class="video-js vjs-big-play-centered" controls
-                 preload="auto" data-setup="{}">
+                 preload="none" data-setup="{}">
             <source src="/videos/cubetastic_import_from_twisty_timer.webm" type="video/webm">
             <source src="/videos/cubetastic_import_from_twisty_timer.m4v">
             <p class="vjs-no-js"> To view this video please enable JavaScript, and consider
@@ -852,22 +852,7 @@
           aria-label="Import/Export"><span class="mdc-fab__icon">import_export</span></button>
   <button id="moreFAB" class="mdc-fab material-icons" aria-label="More"><span class="mdc-fab__icon">more_horiz</span>
   </button>
-  <footer id="pageFooter">
-    <div id="footerBox">
-      <div class="footerLeftDiv"><h3>Cubetastic</h3>
-        <p>Property of Cubetastic</p> <br><br></div>
-      <div class="footerRightDiv"><h3>Contact Me</h3> Email id: cubetastic33@gmail.com<br> <a
-        id="githubBtn" class="mdc-button mdc-button--raised"
-        href="https://github.com/cubetastic33/cubetastic"><img src="/images/Octocat/Octocat.png"
-                                                               alt="GitLab">GitHub</a> <a
-        id="gitlabBtn" class="mdc-button mdc-button--raised"
-        href="https://gitlab.com/cubetastic/cubetastic"><img src="/images/gitlab_logo.png"
-                                                             alt="GitLab">GitLab</a></div>
-    </div>
-    <div class="footer-copyright"> © 2018 | Cubetastic | Official TNoodle scrambling program has
-      been used to generate scrambles.
-    </div>
-  </footer>
+  <footer id="pageFooter" class="site-footer"><div class="footer-content"><div><h3>Cubetastic</h3><p>Independent edition hosted by ash-gram.</p><a href="https://github.com/ash-gram/cubetastic">Source code</a> · <a href="/contactMe">Feedback</a></div><div><h3>Credits</h3><p>Based on <a href="https://github.com/cubetastic33/cubetastic">Cubetastic by cubetastic33</a>, MIT licensed.</p><p>TNoodle scramble generation.</p></div></div></footer>
 </div>
 <ul id="contextMenu" class="mdc-elevation--z6">
   <li id="viewScramble">View Scramble</li>
@@ -1016,4 +1001,4 @@
 </script>
 <script src="/js/timer.js"></script>
 <script async src="/js/loggedStatus.js"></script>
-</html>
+<script>document.addEventListener('DOMContentLoaded', hideloader);</script></html>

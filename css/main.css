@@ -1,4 +1,6 @@
-@import "https://fonts.googleapis.com/css?family=Roboto|Roboto+Condensed|Titillium+Web";
+@font-face {font-family:Roboto;font-style:normal;font-weight:400;src:url('/fonts/roboto/Roboto-Regular.woff2') format('woff2');font-display:swap}
+@font-face {font-family:Roboto;font-style:normal;font-weight:500;src:url('/fonts/roboto/Roboto-Medium.woff2') format('woff2');font-display:swap}
+@font-face {font-family:Roboto;font-style:normal;font-weight:700;src:url('/fonts/roboto/Roboto-Bold.woff2') format('woff2');font-display:swap}
 
 @media only screen and (max-width: 600px) {
   .hide-on-small-only, .hide-on-small-and-down {
@@ -6880,3 +6882,10 @@ a {
 }
 
 /*# sourceMappingURL=main.css.map */
+
+.mdc-top-app-bar {top:0}
+
+.site-footer {padding:24px;box-sizing:border-box;font-family:Roboto,Arial,sans-serif;line-height:1.5}
+.site-footer .footer-content {display:flex;flex-wrap:wrap;gap:24px}
+.site-footer .footer-content>div {flex:1;min-width:240px}
+.site-footer a {color:inherit;text-decoration:underline}
