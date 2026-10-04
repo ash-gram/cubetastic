@@ -57,4 +57,9 @@ jobs:
           node tests/browser-check.cjs
       - name: Publish verified upstream merge
         if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-        run: git push origin HEAD:master
+        run: |
+          # Keep a quiet public fork active so GitHub does not retire its schedule.
+          if (( $(date +%s) - $(git log -1 --format=%ct) > 30 * 86400 )); then
+            git commit --allow-empty -m 'Keep the verified upstream update schedule active'
+          fi
+          git push origin HEAD:master

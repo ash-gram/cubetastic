@@ -102,6 +102,14 @@ class StandaloneTests(unittest.TestCase):
         self.a.set_cookie('cubetastic_session', old_cookie)
         self.assertEqual(self.a.get('/api/state').status_code, 401)
 
+    def test_password_whitespace_and_oversized_solve_key(self):
+        spaced = '  a-password-with-spaces  '
+        result = self.post(self.a, '/api/signup', dict(username='spaces', email='spaces@example.test', password=spaced))
+        self.assertEqual(result.status_code, 201)
+        self.assertEqual(self.post(self.a, '/api/password', dict(current_password=spaced, password='new-long-password')).status_code, 200)
+        uid = self.a.get('/api/session').json['user']['uid']
+        self.assertEqual(self.post(self.a, '/deleteSolve', dict(uid=uid, session='1', key='9'*100), True).status_code, 400)
+
     def test_constraints_and_rate_limit(self):
         self.signup(self.a, 'alice')
         self.assertEqual(self.post(self.b, '/api/signup', dict(username='ALICE', email='other@example.test', password='test-long-password')).status_code, 409)

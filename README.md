@@ -22,11 +22,13 @@ All source travels **PC → GitHub → server**. Never use SCP/SFTP/rsync or sen
 
 ## Updates
 
-GitHub Actions checks upstream hourly at minute 23 (schedules may be delayed by GitHub). It merges `cubetastic33/cubetastic:master`, runs isolation/auth/persistence tests and syntax checks, and pushes only a passing merge to this fork. Conflicts or failing tests stop the workflow for review; they never overwrite the standalone changes. Check the repository Actions tab for failures. Enable Actions in the fork and allow its workflow token to write contents. GitHub may disable schedules after 60 days of repository inactivity; re-enable the workflow in Actions if this happens.
+GitHub Actions checks upstream hourly at minute 23 (schedules may be delayed by GitHub). It merges `cubetastic33/cubetastic:master`, runs isolation/auth/persistence tests, browser regression checks and syntax checks, and pushes only a passing merge to this fork. Conflicts or failing tests stop the workflow for review; they never overwrite the standalone changes. Check the repository Actions tab for failures. The specific workflow requests write access to this repository's contents. After 30 quiet days, a passing run makes an empty maintenance commit to keep the public fork active; GitHub can otherwise disable schedules after 60 days of inactivity. If a workflow remains broken or is disabled, resolve the failure and re-enable it in Actions.
 
 The independent server timer checks this fork every five minutes. Each new revision builds in its own release, runs tests as an unprivileged build user, backs up the database, and activates only after checks pass. The health check verifies the exact revision and rolls back the application symlink on startup failure. Database schema rollback is not automatic; future migrations must remain backward-compatible. Failed revisions are recorded and skipped until a new commit or an explicit `sudo env FORCE=1 /usr/local/sbin/cubetastic-deploy` retry.
 
 Commands: `systemctl status cubetastic cubetastic-deploy.timer`; `journalctl -u cubetastic-deploy`; `sudo systemctl start cubetastic-deploy`; `curl https://cubetastic.duckdns.org/healthz`.
+
+Live account/persistence check: `sudo python3 /opt/cubetastic/current/ops/smoke.py`. It generates temporary credentials on the server, tests signup/login/solve persistence/logout over HTTPS, and removes only its own test account. Local browser check: install Playwright, run the development server, then `node tests/browser-check.cjs` (set `BROWSER_CHANNEL=chromium` for bundled Chromium). `READ_ONLY=1 BASE_URL=https://cubetastic.duckdns.org` tests the live guest timer without creating an account.
 
 ## Backups and recovery
 

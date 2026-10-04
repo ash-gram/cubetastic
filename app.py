@@ -202,7 +202,9 @@ def create_app(config=None):
         new_hash = generate_password_hash(password(data))
         new_recovery = secrets.token_urlsafe(24)
         with get_db() as db:
-            db.execute('UPDATE users SET password_hash=?, recovery_hash=? WHERE id=?', (new_hash, digest(new_recovery), user['id']))
+            changed = db.execute('UPDATE users SET password_hash=?, recovery_hash=? WHERE id=? AND recovery_hash=?', (new_hash, digest(new_recovery), user['id'], digest(recovery)))
+            if changed.rowcount != 1:
+                abort(401, 'This recovery code has already been used.')
             db.execute('DELETE FROM sessions WHERE user_id=?', (user['id'],))
         sign_in(user['id'])
         return jsonify(recovery_code=new_recovery)
@@ -221,7 +223,8 @@ def create_app(config=None):
         uid = require_user()
         rate_limit('password', 10)
         data = payload()
-        if not check_password_hash(g.user['password_hash'], text(data, 'current_password', 256, True)):
+        current = data.get('current_password', '')
+        if not isinstance(current, str) or len(current) > 256 or not check_password_hash(g.user['password_hash'], current):
             abort(401, 'Incorrect current password.')
         new_hash = generate_password_hash(password(data))
         with get_db() as db:
@@ -275,6 +278,8 @@ def create_app(config=None):
         try:
             key = int(request.form.get('key', ''))
         except ValueError:
+            abort(400, 'Invalid solve key.')
+        if not 1 <= key <= 2**63 - 1:
             abort(400, 'Invalid solve key.')
         number = integer(request.form.get('session'), 1, 10000)
         row = get_db().execute('SELECT penalty FROM solves WHERE id=? AND user_id=? AND session=?', (key, uid, number)).fetchone()
