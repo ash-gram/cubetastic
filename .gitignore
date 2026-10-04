@@ -3,3 +3,10 @@
 /__pycache__
 /.env
 cubetastic-33-firebase-adminsdk-89yl9-fe0a5bbca0.json
+
+/instance/
+/.artifacts/
+*.sqlite3*
+*.pyc
+__pycache__/
+/node_modules/

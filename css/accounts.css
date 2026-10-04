@@ -1,0 +1,12 @@
+.account-card {max-width: 540px; margin: 32px auto; padding: 28px; background: white; border-radius: 12px; box-shadow: 0 4px 24px #0002; line-height: 1.6; box-sizing:border-box}
+.account-card label {display:block; margin:16px 0 5px; font-weight:600}
+.account-card input,.account-card textarea {box-sizing:border-box;width:100%;padding:12px;border:1px solid #999;border-radius:6px;font:inherit}
+.account-card button,.account-card .button {display:inline-block;margin:20px 0 8px;padding:12px 20px;background:#1976d2;color:white;border:0;border-radius:6px;font:inherit;cursor:pointer;text-decoration:none}
+.account-card button:disabled {opacity:.6}
+.account-card [role=status] {color:#8a2100;min-height:24px;overflow-wrap:anywhere}
+.account-card code {display:block;background:#eef3fa;padding:14px;overflow-wrap:anywhere;user-select:all}
+.account-card h1 {font-size:28px}
+@media(max-width:600px) {.account-card {margin:20px 12px;padding:20px}}
+
+.account-card {margin-top:100px;font-family:Roboto,Arial,sans-serif}
+@media(max-width:600px){.account-card{margin-top:84px}}

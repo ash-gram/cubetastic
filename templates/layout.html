@@ -11,21 +11,13 @@
   <link rel="icon" href="images/icons/icon-512x512.png">
   <link rel="apple-touch-icon" href="images/icons/icon-512x512.png">
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Acme|Cabin|Play|Saira|Oswald">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        href="/css/vendor/fonts-layout.css">
+  <link rel="stylesheet" href="/css/vendor/fonts-icons.css">
   <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
+        href="/css/vendor/animate-3.5.2.min.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="manifest" href="manifest1.json">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LK777ZRRTG"></script>
-  <script>window.dataLayer = window.dataLayer || [];
 
-  function gtag() {
-    dataLayer.push(arguments);
-  }
-
-  gtag('js', new Date());
-  gtag('config', 'G-LK777ZRRTG');</script>
 </head>
 <body onload="hideloader()">
 <div id="sk-cube-grid">
@@ -81,12 +73,10 @@
       <div class="footerLeftDiv"><h3>Cubetastic</h3>
         <p>Property of Cubetastic</p> <br><br></div>
       <div class="footerRightDiv"><h3>Contact Me</h3> Email id: cubetastic33@gmail.com<br>
-        <iframe title="github btn"
-                src="https://ghbtns.com/github-btn.html?user=cubetastic33&repo=cubetastic&type=star&count=true&size=large"
-                frameborder="0" scrolling="0" width="170px" height="30px"></iframe>
+        <a href="https://github.com/ash-gram/cubetastic">Source code</a>
         <br></div>
     </div>
-    <div class="footer-copyright"> © 2019 | Cubetastic</div>
+    <div class="footer-copyright"> Â© 2019 | Cubetastic</div>
   </footer>
 </div>
 <noscript>You have disabled JavaScript. Cubetastic cannot work without JavaScript, so please enable
@@ -96,19 +86,19 @@
 <script>if (navigator.serviceWorker.controller) {
   console.log('Active service worker found, no need to register');
 } else {
-  navigator.serviceWorker.register('firebase-messaging-sw.js', {scope: './'}).then(function (reg) {
+  navigator.serviceWorker.register('sw.js', {scope: './'}).then(function (reg) {
     console.log('Service worker has been registered for scope:' + reg.scope);
   });
 }</script>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="/js/vendor/jquery-3.7.1.min.js"></script>
 <script>function hideloader() {
   $('#sk-cube-grid').hide();
   $('#hidden').show();
 }</script>
-<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+
 <script src="/js/main.js"></script>
 <script
-  src="https://unpkg.com/material-components-web@latest/dist/material-components-web.min.js"></script>
+  src="/js/vendor/material-components-web-14.0.0.min.js"></script>
 <script>
   mdc.topAppBar.MDCTopAppBar.attachTo(document.querySelector('.mdc-top-app-bar'));
   var drawer = new mdc.drawer.MDCDrawer(document.querySelector('.mdc-drawer--modal'));

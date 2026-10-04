@@ -1,0 +1,8 @@
+[Unit]
+Description=Pull and verify Cubetastic releases from GitHub
+After=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cubetastic-deploy
+TimeoutStartSec=20min
+Nice=10

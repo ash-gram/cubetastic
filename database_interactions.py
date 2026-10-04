@@ -1,146 +1,49 @@
-import datetime
-import firebase_admin
-from os import getenv
-from firebase_admin import credentials, auth, db
-from pyfcm import FCMNotification
-import dotenv
+"""Standalone storage, isolated from application releases."""
+import sqlite3
+from contextlib import closing
+from pathlib import Path
+from flask import current_app, g
 
-dotenv.load_dotenv()
+SCHEMA = '''
+CREATE TABLE IF NOT EXISTS users (
+ id TEXT PRIMARY KEY, username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+ email TEXT NOT NULL UNIQUE COLLATE NOCASE, password_hash TEXT NOT NULL,
+ recovery_hash TEXT NOT NULL, settings TEXT, profile TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS sessions (
+ token_hash TEXT PRIMARY KEY, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ expires INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS solves (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+ session INTEGER NOT NULL, category TEXT NOT NULL, time INTEGER NOT NULL,
+ scramble TEXT NOT NULL, penalty INTEGER NOT NULL, solved_at INTEGER NOT NULL, comment TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS solves_owner_session ON solves(user_id, session, id);
+CREATE TABLE IF NOT EXISTS feedback (id INTEGER PRIMARY KEY, user_id TEXT, title TEXT, message TEXT, created_at INTEGER);
+CREATE TABLE IF NOT EXISTS rate_limits (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, expires INTEGER NOT NULL);
+PRAGMA user_version=1;
+'''
 
-push_service = FCMNotification(api_key=getenv('API_KEY'))
+def connect(path):
+    db = sqlite3.connect(path, timeout=15)
+    db.row_factory = sqlite3.Row
+    db.execute('PRAGMA foreign_keys=ON')
+    db.execute('PRAGMA busy_timeout=15000')
+    return db
 
-#Firebase Initialization
-cred = credentials.Certificate('cubetastic-33-firebase-adminsdk-89yl9-fe0a5bbca0.json')
-default_app = firebase_admin.initialize_app(cred, {
-  'databaseURL': 'https://cubetastic-33.firebaseio.com'
-})
+def initialize(path):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    with closing(connect(path)) as db:
+        db.execute('PRAGMA journal_mode=WAL')
+        db.executescript(SCHEMA)
 
-def create_user(uid, email, location, phone, username, profilePic):
-  db.reference('users').child(uid).set({
-    'email': str(email),
-    'location': str(location),
-    'phone': str(phone),
-    'profilePic': str(profilePic),
-    'username': str(username)
-  })
-  return 'created user ' + str(username) + '.'
+def get_db():
+    if 'database' not in g:
+        g.database = connect(current_app.config['DATABASE'])
+    return g.database
 
-def user_exists(uid, username):
-  users = db.reference('users').get()
-  usernameExists = []
-  uidExists = []
-  for user in users:
-    usernameExists.append(users[user]['username'] == username)
-    uidExists.append(user)
-  usernameExists = True in usernameExists
-  return {'name': str(usernameExists), 'uid': uidExists}
-
-def username_exists(username):
-  users = db.reference('users').get()
-  usernameExists = []
-  for user in users:
-    usernameExists.append(users[user]['username'] == username)
-  return 'True' if True in usernameExists else 'False'
-
-def get_email(username):
-  users = db.reference('users').get()
-  for user in users:
-    #Check if username = user's username
-    if users[user]['username'] == username:
-      return users[user]['email']
-
-def send_feedback(title, message):
-    feedback_ref = db.reference('/feedback')
-    feedback_ref.push({
-      'title': title,
-      'message': message,
-      'time': str(datetime.datetime.now())
-    })
-    return 'Done!'
-
-def save_time(uid, time, session, scramble, category, plus_two, solve_date):
-  db.reference('times/'+str(uid)).child('session'+str(session)).push('%s|%s|%s|%s|%s' % (category, time, scramble, plus_two, solve_date))
-  return 'saved time'
-
-def upload_solves(uid, solves):
-  for solve in solves[2:len(solves)]:
-    #Structure of solve:
-    #[time, scramble, +2, solve date, comment]
-    if len(solve) > 4:
-      db.reference('times/'+uid).child('session'+str(solves[0])).push('%s|%s|%s|%s|%s|%s' % (solves[1], solve[0], solve[1], solve[2], solve[3], solve[4]))
-    else:
-      db.reference('times/'+uid).child('session'+str(solves[0])).push('%s|%s|%s|%s|%s' % (solves[1], solve[0], solve[1], solve[2], solve[3]))
-  return 'Done!'
-
-def penalize_solve(uid, session, key, penalty):
-  solve = db.reference('times/'+uid+'/session'+str(session)+'/'+str(key)).get().split('|')
-  if solve[3] == '0':
-    solve[3] = str(penalty)
-    db.reference('times/'+uid+'/session'+str(session)+'/'+str(key)).set('|'.join(solve))
-  else:
-    solve[3] = '0'
-    db.reference('times/'+uid+'/session'+str(session)+'/'+str(key)).set('|'.join(solve))
-  return 'Done!'
-
-def save_settings(uid, settings):
-  db.reference('/users/'+uid+'/settings').set(settings)
-  return 'Saved settings'
-
-def delete_solve(uid, session, key):
-  if db.reference('times/'+str(uid)+'/session'+str(session)).child(str(key)).get() != None:
-    db.reference('times/'+str(uid)+'/session'+str(session)).child(str(key)).delete()
-    return 'Deleted solve.'
-
-def delete_session(uid, session):
-  if db.reference('times/'+str(uid)+'/session'+str(session)).get() != None:
-    db.reference('times/'+str(uid)+'/session'+str(session)).delete()
-    return 'Deleted session.'
-
-def send_chat_message(uid, group, message):
-  db.reference('/chat/' + str(group)).push({
-    'author': uid,
-    'message': message,
-    'time': str(datetime.datetime.now().time()) + ',' + str(datetime.datetime.now().date())
-  })
-  notifyUsersInGroup(uid, group, message)
-  return 'Success'
-
-def notifyUsersInGroup(uid, requiredGroup, message):
-  fcmTokens = db.reference('fcmTokens').get()
-  username = db.reference('users/'+uid+'/username').get()
-  profilePic = db.reference('users/'+uid+'/profilePic').get()
-  users = db.reference('users').get()
-  for user in users:
-    if users[user]['username'] != username:
-      try:
-        for group in users[user]['chat_groups']:
-          if group == requiredGroup:
-            for fcmToken, fcmTokenUid in fcmTokens.items():
-              if fcmTokenUid == user:
-                message_title = str(username) + ' has sent a message'
-                if len(message) > 50:
-                  message = str(message[0:50]) + '...'
-                push_service.notify_single_device(registration_id=fcmToken, message_title=message_title, message_body=message, message_icon=profilePic)
-                print('Notified ' + str(user))
-      except Exception as e:
-        print('Error '+ str(e))
-
-def update_email_address(uid, email):
-  db.reference('users/' + uid).child('email').set(str(email))
-  return 'updated email to ' + str(email) + '.'
-
-def update_profile_pic(uid, profilePic):
-  db.reference('users/' + uid).child('profilePic').set(str(profilePic))
-  return 'updated profile pic to ' + str(profilePic) + '.'
-
-def update_phone_number(uid, phone):
-  db.reference('users/' + uid).child('phone').set(str(phone))
-  return 'updated number to ' + str(phone) + '.'
-
-def update_location(uid, location):
-  db.reference('users/' + uid).child('location').set(str(location))
-  return 'updated location to ' + str(location) + '.'
-
-def update_bio(uid, bio):
-  db.reference('users/' + uid).child('bio').set(str(bio))
-  return 'updated bio to ' + str(bio) + '.'
+def close_db(_error=None):
+    db = g.pop('database', None)
+    if db is not None:
+        db.close()

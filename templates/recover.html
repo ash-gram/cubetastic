@@ -1,0 +1,13 @@
+{% extends 'layout.html' %}
+{% block title %}Cubetastic | Account recovery{% endblock %}
+{% block body %}
+<link rel="stylesheet" href="/css/accounts.css">
+<section class="account-card"><h1>Recover your account</h1><p>Use the recovery code you saved when you created your account.</p>
+<form onsubmit="submitAccount(event, '/api/recover')">
+<label for="username">Username or email</label><input id="username" name="username" autocomplete="username" required>
+<label for="recovery_code">Recovery code</label><input id="recovery_code" name="recovery_code" autocomplete="off" required>
+<label for="password">New password (at least 12 characters)</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required>
+<button type="submit">Reset password</button><p role="status" aria-live="polite"></p></form>
+<div id="recovery" hidden><h2>Save your new recovery code</h2><p>Your old code no longer works. Save this replacement in your password manager.</p><code></code><a class="button" href="/timer">I saved my code — open timer</a></div></section>
+{% endblock %}
+{% block javascript %}<script src="/js/profile.js"></script>{% endblock %}

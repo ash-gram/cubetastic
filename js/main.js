@@ -1,135 +1,119 @@
-var config = {
-  apiKey: 'AIzaSyA7Vso_wqTgRPORu8hkwHBZNExGWzyJCZ8',
-  authDomain: 'cubetastic-33.firebaseapp.com',
-  databaseURL: 'https://cubetastic-33.firebaseio.com',
-  projectId: 'cubetastic-33',
-  storageBucket: 'cubetastic-33.appspot.com',
-  messagingSenderId: '984789275247',
+/* Same-origin session and snapshot client for the existing timer UI. */
+window.account = {currentUser: null, csrf: '', callbacks: [],
+  onAuthStateChanged(callback) { this.ready.then(() => callback(this.currentUser)); },
+  async request(path, data) {
+    await this.ready;
+    const response = await fetch(path, {method: data === undefined ? 'GET' : 'POST',
+      credentials: 'same-origin', cache: 'no-store',
+      headers: {'Content-Type': 'application/json', 'X-CSRF-Token': this.csrf},
+      body: data === undefined ? undefined : JSON.stringify(data)});
+    const value = await response.json();
+    if (!response.ok) throw new Error(value.error || 'Request failed. Please retry.');
+    return value;
+  }
 };
-firebase.initializeApp(config);
-var db = firebase.database(), storage = firebase.storage(), messaging = firebase.messaging();
-
-function usernameAvailability(e) {
-  $.ajax({
-    type: 'POST', url: '/usernameExists', data: {username: e}, success: function (t) {
-      console.log(t), 'True' == t ? ($('#username').parent().attr('class', 'outlined-input-field error-input-field'), $('#username ~ .helper-text').text('User with name "' + e + '" already exists!')) : ($('#username').parent().attr('class', 'outlined-input-field success-input-field'), $('#username ~ .helper-text').text('Username "' + e + '" is available!'));
-    },
-  });
-}
-
-function usernameValidity(e) {
-  $.ajax({
-    type: 'POST', url: '/usernameExists', data: {username: e}, success: function (t) {
-      console.log(t), 'True' == t ? ($('#username').parent().attr('class', 'outlined-input-field success-input-field'), $('#username ~ .helper-text').text('User "' + e + '" exists!')) : ($('#username').parent().attr('class', 'outlined-input-field warning-input-field'), $('#username ~ .helper-text').text('User "' + e + '" does not exist!'));
-    },
-  });
-}
-
-function signUpUser(e) {
-  e.preventDefault();
-  var t = $('#username').val(), a = $('#email').val(), s = $('#password').val(),
-    i = ($('#confirmPassword').val(), $('#phone').val()), n = $('#selectLocation').val();
-  t.length >= 6 ? usernameAvailability(t) : ($('#username').parent().attr('class', 'outlined-input-field error-input-field'), $('#username ~ .helper-text').text('Username should be at least 6 characters.')), !1 === $('#username').parent().hasClass('error-input-field') && !1 === $('#password').parent().hasClass('error-input-field') ? (snackbar.show({
-    message: 'Please wait...',
-    timeout: 6e3,
-  }), firebase.auth().createUserWithEmailAndPassword(a, s).catch(function (e) {
-    var t = e.code;
-    e.message;
-    'auth/email-already-in-use' == t ? ($('#email').parent().attr('class', 'outlined-input-field error-input-field'), $('#email ~ .helper-text').text('This email address is already in use!')) : 'auth/invalid-email' == t ? ($('#email').parent().attr('class', 'outlined-input-field error-input-field'), $('#email ~ .helper-text').text('Email address is not properly formatted!')) : 'auth/weak-password' == t ? ($('#password').parent().attr('class', 'outlined-input-field error-input-field'), $('#password ~ .helper-text').text('Password is too weak!')) : (console.log(e), snackbar.show({
-      message: e,
-      multiline: !0,
-      timeout: 1e4,
-    })), snackbar.show({
-      message: 'Please rectify any mistakes in the form!',
-      multiline: !0,
-      timeout: 1e4,
-    });
-  }), firebase.auth().onAuthStateChanged(function (e) {
-    if (e) {
-      e.uid;
-      e.updateProfile({
-        displayName: t,
-        photoURL: '/images/defaultProfilePic.png',
-      }), $.ajax({
-        type: 'POST',
-        url: '/createUser',
-        data: {
-          uid: e.uid,
-          email: a,
-          location: n,
-          phone: i,
-          photoURL: '/images/defaultProfilePic.png',
-          username: t,
-        },
-        success: function (a) {
-          console.log(a), a == 'created user ' + t + '.' && e.sendEmailVerification().then(function () {
-            alert('Verification email has been sent.'), window.location.href = '/profile';
-          }).catch(function (e) {
-            console.log(e), snackbar.show({message: e, multiline: !0, timeout: 1e4});
-          });
-        },
-      });
+account.ready = Promise.all([
+  fetch('/api/session', {cache: 'no-store'}).then(r => {
+    if (!r.ok) throw new Error('Session unavailable');
+    return r.json();
+  }).catch(() => ({user: null, csrf: ''})),
+  new Promise(resolve => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', resolve, {once: true}) : resolve())
+]).then(([data]) => {
+  account.currentUser = data.user;
+  account.csrf = data.csrf;
+  // Session names and display preferences are device-local, separated by account.
+  const owner = data.user ? data.user.uid : 'guest';
+  const previous = localStorage.getItem('cubetastic.preferencesOwner');
+  if (previous && previous !== owner) {
+    for (const key of ['sessionNames', 'noOfSessions', 'settings', 'selectedSession', 'selectedCategory']) {
+      const oldValue = localStorage.getItem(key);
+      if (oldValue !== null) localStorage.setItem('cubetastic.' + previous + '.' + key, oldValue);
+      const nextValue = localStorage.getItem('cubetastic.' + owner + '.' + key);
+      if (nextValue === null) localStorage.removeItem(key); else localStorage.setItem(key, nextValue);
     }
-  })) : snackbar.show({message: 'Please rectify any mistakes in the form!', timeout: 1e4});
-}
-
-function signInUser(e) {
-  e.preventDefault();
-  var t = $('#username').val(), a = $('#password').val();
-  '' === t ? ($('#username').parent().attr('class', 'outlined-input-field error-input-field'), $('#username ~ .helper-text').text('Please enter your username!')) : (snackbar.show({message: 'Please wait...'}), $('#username').parent().hasClass('warning-input-field') ? snackbar.show({
-    message: 'Wrong Username!',
-    timeout: 4e3,
-  }) : (signedinnow = !0, $.ajax({
-    type: 'POST',
-    url: '/getEmail',
-    data: {username: t},
-    success: function (e) {
-      firebase.auth().signInWithEmailAndPassword(e, a).then(function (e) {
-        window.location.href = '/profile';
-      }).catch(function (e) {
-        console.log(e), snackbar.show({message: e, multiline: !0, timeout: 1e4});
-      });
-    },
-  })));
-}
-
-function signOutUser() {
-  firebase.auth().signOut().then(function () {
-  }).catch(function (e) {
-    console.log(e), console.log(e), snackbar.show({message: e, multiline: !0, timeout: 1e4});
-  });
-}
-
-window.addEventListener('load', function () {
-  $('body').css('background-color', '#FFFFFF');
-}), $('#timerDropdownTrigger').hover(function (e) {
-  e.preventDefault(), $('#timerDropdown').toggle();
-}), $('#signupDivision #username').keyup(function () {
-  '' != $(this).val() ? $(this).val().length >= 6 ? usernameAvailability($(this).val()) : ($('#username').parent().attr('class', 'outlined-input-field error-input-field'), $('#username ~ .helper-text').text('Username should be at least 6 characters.')) : ($('#username').parent().attr('class', 'outlined-input-field'), $('#username ~ .helper-text').empty());
-}), $('#signupDivision #email').keyup(function () {
-  $('#email').parent().attr('class', 'outlined-input-field'), $('#email ~ .helper-text').empty();
-}), $('#signupDivision #confirmPassword').keyup(function () {
-  $(this).val() == $('#password').val() ? ($('#password').parent().attr('class', 'outlined-input-field success-input-field'), $('#password ~ .helper-text').text('The passwords are matching.')) : ($('#password').parent().attr('class', 'outlined-input-field error-input-field'), $('#password ~ .helper-text').text('The passwords aren\'t matching!'));
-}), $('#signinDivision #username').keyup(function () {
-  '' != $(this).val() ? usernameValidity($(this).val()) : ($(this).parent().attr('class', 'outlined-input-field'), $('#username ~ .helper-text').empty());
-}), signedinnow = !1, $('#forgotPassword').click(function () {
-  firebase.auth().sendPasswordResetEmail(prompt('Enter your email address')).then(function () {
-    console.log('Sent password reset email.');
-  }).catch(function (e) {
-    console.log('Error: ', e);
-  });
-}), messaging.onMessage(function (e) {
-  console.log(e), snackbar.show({
-    message: e.notification.title,
-    timeout: 2e3,
-  }), navigator.serviceWorker.register('firebase-messaging-sw.js', {scope: './'}).then(function (t) {
-    console.log('Service worker has been registered for scope:' + t.scope);
-    var a = {
-      body: e.notification.body,
-      icon: e.notification.icon,
-      vibrate: [100, 50, 100],
-      data: {dateOfArrival: Date.now(), primaryKey: 1},
-    };
-    t.showNotification(e.notification.title, a);
-  });
+    localStorage.setItem('cubetastic.preferencesOwner', owner);
+    location.reload();
+    return new Promise(() => {});
+  }
+  localStorage.setItem('cubetastic.preferencesOwner', owner);
 });
+
+const stateListeners = new Map();
+let cachedState = {}, statePromise = null;
+function snapshot(value, key) {
+  return {key, val: () => value === undefined ? null : value,
+    child: name => snapshot(value && value[name], name),
+    hasChildren: () => !!value && Object.keys(value).length > 0,
+    numChildren: () => value ? Object.keys(value).length : 0,
+    forEach: callback => Object.entries(value || {}).some(([k, v]) => callback(snapshot(v, k)) === true)};
+}
+function readState(path, limit, end) {
+  let value = path.split('/').filter(Boolean).reduce((v, key) => v && v[key], cachedState);
+  if (value && (limit || end)) {
+    let entries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b));
+    if (end) entries = entries.filter(([key]) => key <= end);
+    if (limit) entries = entries.slice(-limit);
+    value = Object.fromEntries(entries);
+  }
+  return snapshot(value, path.split('/').pop());
+}
+async function refreshState() {
+  if (!account.currentUser) return;
+  if (statePromise) return statePromise;
+  statePromise = account.request('/api/state').then(state => {
+    cachedState = state;
+    for (const listener of [...stateListeners.values()]) listener();
+  }).catch(error => {
+    if (typeof snackbar !== 'undefined') snackbar.show({message: error.message});
+  }).finally(() => { statePromise = null; });
+  return statePromise;
+}
+window.solveStore = {ref(path) {
+  const query = {path, limit: null, end: null,
+    orderByKey() { return this; }, limitToLast(n) { this.limit = n; return this; },
+    endAt(key) { this.end = key; return this; },
+    async once(event, callback) {
+      await account.ready;
+      if (!Object.keys(cachedState).length) await refreshState();
+      const value = readState(this.path, this.limit, this.end);
+      if (event === 'child_added') {
+        const entries = Object.entries(value.val() || {});
+        if (entries.length) callback(snapshot(entries[entries.length - 1][1], entries[entries.length - 1][0]));
+      } else callback(value);
+      return value;
+    },
+    on(event, callback) {
+      const key = this.path + ':' + this.limit + ':' + this.end;
+      // A new session view replaces old session subscriptions.
+      if (this.path.includes('/times/') && !this.end) {
+        for (const oldKey of stateListeners.keys()) if (oldKey.includes('/times/')) stateListeners.delete(oldKey);
+      }
+      let previous;
+      const listener = () => {
+        const value = readState(this.path, this.limit, this.end);
+        const encoded = JSON.stringify(value.val());
+        if (encoded !== previous) { previous = encoded; callback(value); }
+      };
+      stateListeners.set(key, listener);
+      account.ready.then(() => Object.keys(cachedState).length ? listener() : refreshState());
+      return callback;
+    }
+  };
+  return query;
+}};
+setInterval(() => { if (!document.hidden) refreshState(); }, 10000);
+window.addEventListener('focus', () => refreshState());
+$.ajaxPrefilter(function(options, original, xhr) {
+  if (!options.crossDomain && !/^(GET|HEAD|OPTIONS)$/i.test(options.type)) xhr.setRequestHeader('X-CSRF-Token', account.csrf);
+});
+$(document).ajaxSuccess((event, xhr, settings) => {
+  if (settings.type === 'POST') refreshState();
+});
+$(document).ajaxError((event, xhr) => {
+  const message = xhr.responseJSON?.error || 'Could not save. Check your connection and retry.';
+  if (typeof snackbar !== 'undefined') snackbar.show({message});
+});
+async function signOutUser() {
+  try { await account.request('/api/logout', {}); location.href = '/signin'; }
+  catch (error) { alert(error.message); }
+}

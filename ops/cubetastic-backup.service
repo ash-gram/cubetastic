@@ -1,0 +1,6 @@
+[Unit]
+Description=Consistent Cubetastic database backup and restore check
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 /opt/cubetastic/current/ops/backup.py
+UMask=0077

@@ -1,0 +1,25 @@
+[Unit]
+Description=Standalone Cubetastic web application
+After=network.target
+[Service]
+User=cubetastic
+Group=cubetastic
+WorkingDirectory=/opt/cubetastic/current
+EnvironmentFile=/etc/cubetastic/app.env
+EnvironmentFile=/opt/cubetastic/current/release.env
+Environment=PYTHONDONTWRITEBYTECODE=1
+ExecStart=/opt/cubetastic/current/.venv/bin/gunicorn --bind 127.0.0.1:8033 --workers 2 --threads 2 --timeout 60 --access-logfile - --error-logfile - wsgi:app
+Restart=on-failure
+RestartSec=5
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/cubetastic
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+[Install]
+WantedBy=multi-user.target

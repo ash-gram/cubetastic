@@ -11,23 +11,15 @@
   <link rel="icon" href="images/icons/icon-512x512.png">
   <link rel="apple-touch-icon" href="images/icons/icon-512x512.png">
   <link rel="stylesheet"
-        href="https://fonts.googleapis.com/css?family=Cabin|Saira|Play|Iceberg|Unica+One|Contrail+One|Share+Tech+Mono|Black+Han+Sans|Copse|Noto+Sans|Space+Mono|Titillium+Web">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+        href="/css/vendor/fonts-timer.css">
+  <link rel="stylesheet" href="/css/vendor/fonts-icons.css">
   <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/11.1.0/nouislider.min.css">
-  <link rel="stylesheet" href="https://vjs.zencdn.net/7.1.0/video-js.css">
+        href="/css/vendor/nouislider-11.1.0.min.css">
+  <link rel="stylesheet" href="/css/vendor/video-js-7.1.0.css">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/timer.css">
   <link rel="manifest" href="manifest.json">
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-LK777ZRRTG"></script>
-  <script>window.dataLayer = window.dataLayer || [];
 
-  function gtag() {
-    dataLayer.push(arguments);
-  }
-
-  gtag('js', new Date());
-  gtag('config', 'G-LK777ZRRTG');</script>
 </head>
 <body onload="hideloader()">
 <div id="sk-cube-grid">
@@ -895,11 +887,11 @@
   enable it!
 </noscript>
 </body>
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="/js/vendor/jquery-3.7.1.min.js"></script>
 <script async>if (navigator.serviceWorker.controller) {
   console.log('Active service worker found, no need to register');
 } else {
-  navigator.serviceWorker.register('firebase-messaging-sw.js', {scope: './'}).then(function (reg) {
+  navigator.serviceWorker.register('sw.js', {scope: './'}).then(function (reg) {
     console.log('Service worker has been registered for scope:' + reg.scope);
   });
 }</script>
@@ -908,7 +900,7 @@
   $('#hidden').show();
   document.querySelector('#session').scrollTo(0, document.querySelector('#session').scrollHeight);
 }</script>
-<script src="https://www.gstatic.com/firebasejs/5.0.4/firebase.js"></script>
+
 <script async src="js/tnoodle.js"></script>
 <script src="js/main.js"></script>
 <script src="js/mdc-web.min.js"></script>

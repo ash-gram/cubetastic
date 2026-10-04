@@ -1,0 +1,8 @@
+[Unit]
+Description=Nightly Cubetastic backup
+[Timer]
+OnCalendar=*-*-* 02:20:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+[Install]
+WantedBy=timers.target

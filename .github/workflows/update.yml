@@ -1,0 +1,60 @@
+name: Test and sync upstream
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: cubetastic-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Merge upstream on scheduled or manual runs
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name 'Cubetastic update bot'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote add upstream https://github.com/cubetastic33/cubetastic.git
+          git fetch upstream master
+          git merge --no-edit upstream/master
+      - run: python -m pip install -r requirements.lock
+      - run: python -m unittest discover -s tests -v
+      - name: Check browser scripts and release scripts
+        run: |
+          for script in main profile loggedStatus timer; do node --check js/$script.js; done
+          bash -n ops/bootstrap.sh ops/deploy.sh
+      - name: Browser regression checks
+        env:
+          SECRET_KEY: temporary-ci-session-secret
+          COOKIE_SECURE: '0'
+          DATABASE_PATH: /tmp/cubetastic-ci.sqlite3
+          BROWSER_CHANNEL: chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.62.1
+          npx playwright install --with-deps chromium
+          python -m flask --app app:create_app run --port 5093 > /tmp/cubetastic-ci.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:5093/healthz && break
+            sleep 1
+          done
+          mkdir -p .artifacts
+          node tests/browser-check.cjs
+      - name: Publish verified upstream merge
+        if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+        run: git push origin HEAD:master

@@ -1,11 +1,10 @@
-firebase.auth().onAuthStateChanged(function (a) {
-  if (a) {
-    var b = a.email, c = a.emailVerified;
-    username = a.displayName, db.ref('users/' + a.uid).on('value', function (d) {
-      profilePic = d.child('profilePic').val(), !1 == c ? (firebase.auth().signOut().then(function () {
-      }).catch(function (e) {
-        console.log(e);
-      }), $('#profileLinkInHeader').html('<a href="/signin" class="material-icons mdc-top-app-bar__action-item" aria-label="Sign In" alt="Sign In">account_circle</a>'), $('#sideMenu .mdc-drawer__content .mdc-list:last-child').html(`<a href="/signin" class="mdc-list-item" tabindex="-1">Sign In</a><a href="/signup" class="mdc-list-item" tabindex="-1">Sign Up</a>`), '/signin' == window.location.pathname ? $('#sideMenu .mdc-drawer__content .mdc-list:last-child a:first-child').addClass('mdc-list-item--activated') : '/signup' == window.location.pathname && $('#sideMenu .mdc-drawer__content .mdc-list:last-child a:last-child').addClass('mdc-list-item--activated')) : ($('#profileLinkInHeader').html('<img src="' + profilePic + '" class="material-icons mdc-top-app-bar__action-item" onclick="window.location.href=\'/profile\'">'), $('#sideMenu .mdc-drawer__content .mdc-list:last-child').html(`<a href="/profile" class="mdc-list-item" tabindex="-1">Profile</a><a href="#" class="mdc-list-item" onclick="signOutUser()" tabindex="-1">Sign out</a>`), '/profile' == window.location.pathname && $('#sideMenu .mdc-drawer__content .mdc-list:last-child a:first-child').addClass('mdc-list-item--activated'));
-    });
-  } else $('#profileLinkInHeader').html('<a href="signin" class="material-icons mdc-top-app-bar__action-item" aria-label="Sign In" alt="Sign In">account_circle</a>'), $('#sideMenu .mdc-drawer__content .mdc-list:last-child').html('      <a href="/signin" class="mdc-list-item" tabindex="-1">Sign In</a>      <a href="/signup" class="mdc-list-item" tabindex="-1">Sign Up</a>    '), '/signin' == window.location.pathname ? $('#sideMenu .mdc-drawer__content .mdc-list:last-child a:first-child').addClass('mdc-list-item--activated') : '/signup' == window.location.pathname && $('#sideMenu .mdc-drawer__content .mdc-list:last-child a:last-child').addClass('mdc-list-item--activated');
+account.onAuthStateChanged(function(user) {
+  const header = document.querySelector('#profileLinkInHeader');
+  const menu = document.querySelector('#sideMenu .mdc-list:last-child');
+  if (header) header.innerHTML = user
+    ? '<a href="/profile" class="material-icons mdc-top-app-bar__action-item" aria-label="Profile">account_circle</a>'
+    : '<a href="/signin" class="material-icons mdc-top-app-bar__action-item" aria-label="Sign in">account_circle</a>';
+  if (menu) menu.innerHTML = user
+    ? '<a href="/profile" class="mdc-list-item">Profile</a><a href="#" class="mdc-list-item" onclick="signOutUser();return false">Sign out</a>'
+    : '<a href="/signin" class="mdc-list-item">Sign in</a><a href="/signup" class="mdc-list-item">Sign up</a>';
 });

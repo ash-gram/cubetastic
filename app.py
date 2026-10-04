@@ -1,194 +1,335 @@
-from flask import Flask, render_template, request, send_from_directory, jsonify
+"""Standalone accounts and owner-scoped SQLite solve APIs."""
+import hashlib
 import json
-import database_interactions
+import os
+import re
+import secrets
+import sqlite3
+import time
+from datetime import timedelta
+from pathlib import Path
+from flask import Flask, abort, g, jsonify, render_template, request, send_from_directory, session
+from werkzeug.exceptions import HTTPException
+from werkzeug.middleware.proxy_fix import ProxyFix
+from werkzeug.security import check_password_hash, generate_password_hash
+from database_interactions import initialize, get_db, close_db
 
-app = Flask(__name__, static_url_path='/')
+ROOT = Path(__file__).parent
 
-@app.route('/')
-def index():
-  return render_template('index.html')
+def create_app(config=None):
+    app = Flask(__name__, static_url_path='')
+    app.config.update(
+        SECRET_KEY=os.environ.get('SECRET_KEY'),
+        DATABASE=os.environ.get('DATABASE_PATH', str(ROOT / 'instance' / 'cubetastic.sqlite3')),
+        SESSION_COOKIE_NAME='cubetastic_session', SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SECURE=os.environ.get('COOKIE_SECURE', '1') == '1',
+        SESSION_COOKIE_SAMESITE='Lax', PERMANENT_SESSION_LIFETIME=timedelta(days=14),
+        MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+    )
+    if config:
+        app.config.update(config)
+    if not app.secret_key:
+        raise RuntimeError('Set SECRET_KEY to a server-generated random secret.')
+    if os.environ.get('TRUST_PROXY') == '1':
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+    initialize(app.config['DATABASE'])
+    app.teardown_appcontext(close_db)
 
-@app.route('/index')
-def index_html():
-  return render_template('index.html')
+    def digest(value):
+        return hashlib.sha256(value.encode()).hexdigest()
 
-@app.route('/solve')
-def solve_html():
-  return render_template('solve.html')
+    def require_user():
+        if g.user is None:
+            abort(401, 'Sign in to access your account.')
+        supplied = request.form.get('uid')
+        if supplied is not None and supplied != g.user['id']:
+            abort(403, 'This account does not own that data.')
+        return g.user['id']
 
-@app.route('/timer')
-def timer():
-  return render_template('timer.html')
+    def public_user(user):
+        if user is None:
+            return None
+        return dict(uid=user['id'], username=user['username'], displayName=user['username'],
+                    email=user['email'], **json.loads(user['profile']))
 
-@app.route('/saveTime', methods=['POST'])
-def saveTime():
-  uid = request.form.getlist('uid')[0]
-  time = request.form.getlist('time')[0]
-  session = request.form.getlist('session')[0]
-  scramble = request.form.getlist('scramble')[0]
-  category = request.form.getlist('category')[0]
-  plus_two = request.form.getlist('plus_two')[0]
-  solve_date = request.form.getlist('solve_date')[0]
-  return database_interactions.save_time(uid, time, session, scramble, category, plus_two, solve_date)
+    def rate_limit(name, maximum, seconds=900):
+        now = int(time.time())
+        bucket = name + ':' + digest(request.remote_addr or 'unknown')
+        with get_db() as db:
+            db.execute('DELETE FROM rate_limits WHERE expires < ?', (now,))
+            db.execute('INSERT INTO rate_limits VALUES (?,1,?) ON CONFLICT(bucket) DO UPDATE SET count=count+1', (bucket, now + seconds))
+            count = db.execute('SELECT count FROM rate_limits WHERE bucket=?', (bucket,)).fetchone()[0]
+        if count > maximum:
+            abort(429, 'Too many attempts. Please try again later.')
 
-@app.route('/uploadSolves', methods=['POST'])
-def uploadSolves():
-  uid = request.form.getlist('uid')[0]
-  solves = json.loads(request.form.getlist('solves')[0])
-  return database_interactions.upload_solves(uid, solves)
+    def sign_in(uid):
+        old_token = session.get('token')
+        session.clear()
+        session.permanent = True
+        session['token'] = secrets.token_urlsafe(32)
+        session['csrf'] = secrets.token_urlsafe(32)
+        with get_db() as db:
+            if old_token:
+                db.execute('DELETE FROM sessions WHERE token_hash=?', (digest(old_token),))
+            db.execute('DELETE FROM sessions WHERE expires < ?', (int(time.time()),))
+            db.execute('INSERT INTO sessions VALUES (?,?,?)', (digest(session['token']), uid, int(time.time()) + 14 * 86400))
 
-@app.route('/penalizeSolve', methods=['POST'])
-def penalizeSolve():
-  uid = request.form.getlist('uid')[0]
-  session = request.form.getlist('session')[0]
-  key = request.form.getlist('key')[0]
-  penalty = request.form.getlist('penalty')[0]
-  return database_interactions.penalize_solve(uid, session, key, penalty)
+    def payload():
+        data = request.get_json(silent=True) if request.is_json else request.form
+        if not hasattr(data, 'get'):
+            abort(400, 'Expected an object.')
+        return data
 
-@app.route('/deleteSolve', methods=['POST'])
-def deleteSolve():
-  uid = request.form.getlist('uid')[0]
-  session = request.form.getlist('session')[0]
-  key = request.form.getlist('key')[0]
-  return database_interactions.delete_solve(uid, session, key)
+    def text(data, key, maximum=500, required=False):
+        value = data.get(key, '')
+        if not isinstance(value, str) or len(value) > maximum or (required and not value.strip()):
+            abort(400, 'Invalid ' + key + '.')
+        return value.strip()
 
-@app.route('/deleteSession', methods=['POST'])
-def deleteSession():
-  uid = request.form.getlist('uid')[0]
-  session = request.form.getlist('session')[0]
-  return database_interactions.delete_session(uid, session)
+    def password(data, key='password'):
+        value = data.get(key, '')
+        if not isinstance(value, str) or not 12 <= len(value) <= 256:
+            abort(400, 'Use a password of 12-256 characters.')
+        return value
 
-@app.route('/saveSettings', methods=['POST'])
-def saveSettings():
-  uid = request.form.getlist('uid')[0]
-  settings = request.form.getlist('settings')[0]
-  return database_interactions.save_settings(uid, settings)
+    def integer(value, minimum=0, maximum=10**15):
+        try:
+            result = int(value)
+        except (ValueError, TypeError, OverflowError):
+            abort(400, 'Expected an integer.')
+        if str(result) != str(value) or not minimum <= result <= maximum:
+            abort(400, 'Number is outside the accepted range.')
+        return result
 
-@app.route('/installpwa')
-def installpwa():
-  return render_template('installpwa.html')
+    def safe_field(value, maximum):
+        if not isinstance(value, str) or len(value) > maximum or any(c in value for c in '<>|\x00'):
+            abort(400, 'Invalid solve text.')
+        return value
 
-@app.route('/contactMe')
-def contactMe():
-  return render_template('contactMe.html')
+    @app.before_request
+    def authenticate():
+        g.user = None
+        token = session.get('token')
+        if token:
+            g.user = get_db().execute('SELECT users.* FROM sessions JOIN users ON users.id=sessions.user_id WHERE token_hash=? AND expires>?', (digest(token), int(time.time()))).fetchone()
+        if request.method not in ('GET', 'HEAD', 'OPTIONS'):
+            expected = session.get('csrf', '')
+            actual = request.headers.get('X-CSRF-Token', '')
+            if not expected or not secrets.compare_digest(expected, actual):
+                abort(403, 'Refresh this page and retry (CSRF token required).')
+            origin = request.headers.get('Origin')
+            if origin and origin != request.host_url.rstrip('/'):
+                abort(403, 'Cross-origin writes are not allowed.')
 
-@app.route('/sendFeedback', methods=['POST'])
-def sendFeedback():
-  title = request.form.getlist('title')
-  message = request.form.getlist('message')
-  return database_interactions.send_feedback(title[0], message[0])
+    @app.after_request
+    def headers(response):
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        response.headers['X-Frame-Options'] = 'DENY'
+        response.headers['Referrer-Policy'] = 'same-origin'
+        response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: https:; media-src 'self' blob:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'"
+        if request.path.startswith('/api/') or request.method == 'POST' or response.mimetype == 'text/html':
+            response.headers['Cache-Control'] = 'no-store'
+        if request.is_secure:
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+        return response
 
-@app.route('/profile')
-def profile():
-  return render_template('profile.html')
+    @app.errorhandler(HTTPException)
+    def http_error(error):
+        return jsonify(error=error.description), error.code
 
-@app.route('/updateEmailAddress', methods=['POST'])
-def updateEmailAddress():
-  uid = request.form.getlist('uid')[0]
-  email = request.form.getlist('email')[0]
-  return database_interactions.update_email_address(uid, email)
+    @app.get('/healthz')
+    def health():
+        get_db().execute('SELECT 1 FROM users LIMIT 1').fetchone()
+        return jsonify(status='ok', revision=os.environ.get('RELEASE_SHA', 'development'))
 
-@app.route('/updateProfilePic', methods=['POST'])
-def updateProfilePic():
-  uid = request.form.getlist('uid')[0]
-  profilePic = request.form.getlist('profilePic')[0]
-  return database_interactions.update_profile_pic(uid, profilePic)
+    @app.get('/api/session')
+    def session_info():
+        if 'csrf' not in session:
+            session['csrf'] = secrets.token_urlsafe(32)
+        return jsonify(user=public_user(g.user), csrf=session['csrf'])
 
-@app.route('/updatePhoneNumber', methods=['POST'])
-def updatePhoneNumber():
-  uid = request.form.getlist('uid')[0]
-  phone = request.form.getlist('phone')[0]
-  return database_interactions.update_phone_number(uid, phone)
+    @app.post('/api/signup')
+    def signup():
+        rate_limit('signup', 10, 3600)
+        data = payload()
+        username = text(data, 'username', 32, True)
+        email = text(data, 'email', 254, True).lower()
+        if not re.fullmatch(r'[A-Za-z0-9_\-]{3,32}', username) or not re.fullmatch(r'[^\s@]+@[^\s@]+\.[^\s@]+', email):
+            abort(400, 'Use a valid email and a username with 3-32 letters, numbers, underscores or hyphens.')
+        hashed = generate_password_hash(password(data))
+        recovery = secrets.token_urlsafe(24)
+        uid = secrets.token_hex(16)
+        try:
+            with get_db() as db:
+                db.execute('INSERT INTO users(id,username,email,password_hash,recovery_hash) VALUES (?,?,?,?,?)', (uid, username, email, hashed, digest(recovery)))
+        except sqlite3.IntegrityError:
+            abort(409, 'That username or email is already registered.')
+        sign_in(uid)
+        return jsonify(recovery_code=recovery), 201
 
-@app.route('/updateLocation', methods=['POST'])
-def updateLocation():
-  uid = request.form.getlist('uid')[0]
-  location = request.form.getlist('location')[0]
-  return database_interactions.update_location(uid, location)
+    @app.post('/api/login')
+    def login():
+        rate_limit('login', 20)
+        data = payload()
+        username = text(data, 'username', 254, True)
+        candidate = data.get('password', '')
+        if not isinstance(candidate, str) or len(candidate) > 256:
+            abort(400, 'Invalid password.')
+        user = get_db().execute('SELECT * FROM users WHERE username=? COLLATE NOCASE OR email=? COLLATE NOCASE', (username, username)).fetchone()
+        stored = user['password_hash'] if user else app.config['DUMMY_PASSWORD_HASH']
+        valid = check_password_hash(stored, candidate)
+        if user is None or not valid:
+            abort(401, 'Incorrect username/email or password.')
+        sign_in(user['id'])
+        return jsonify(ok=True)
 
-@app.route('/updateBio', methods=['POST'])
-def updateBio():
-  uid = request.form.getlist('uid')[0]
-  bio = request.form.getlist('bio')[0]
-  return database_interactions.update_bio(uid, bio)
+    @app.post('/api/logout')
+    def logout():
+        with get_db() as db:
+            db.execute('DELETE FROM sessions WHERE token_hash=?', (digest(session.get('token', '')),))
+        session.clear()
+        return jsonify(ok=True)
 
-@app.route('/signin')
-def signin():
-  return render_template('signin.html')
+    @app.post('/api/recover')
+    def recover():
+        rate_limit('recover', 10)
+        data = payload()
+        username = text(data, 'username', 254, True)
+        recovery = text(data, 'recovery_code', 128, True)
+        user = get_db().execute('SELECT * FROM users WHERE username=? COLLATE NOCASE OR email=? COLLATE NOCASE', (username, username)).fetchone()
+        if not user or not secrets.compare_digest(user['recovery_hash'], digest(recovery)):
+            abort(401, 'Incorrect account or recovery code.')
+        new_hash = generate_password_hash(password(data))
+        new_recovery = secrets.token_urlsafe(24)
+        with get_db() as db:
+            db.execute('UPDATE users SET password_hash=?, recovery_hash=? WHERE id=?', (new_hash, digest(new_recovery), user['id']))
+            db.execute('DELETE FROM sessions WHERE user_id=?', (user['id'],))
+        sign_in(user['id'])
+        return jsonify(recovery_code=new_recovery)
 
-@app.route('/signup')
-def signup():
-  return render_template('signup.html')
+    @app.post('/api/profile')
+    def profile_update():
+        uid = require_user()
+        data = payload()
+        profile = {field: text(data, field, 500) for field in ('phone', 'location', 'bio')}
+        with get_db() as db:
+            db.execute('UPDATE users SET profile=? WHERE id=?', (json.dumps(profile), uid))
+        return jsonify(ok=True)
 
-@app.route('/userExists', methods=['POST'])
-def userExists():
-  uid = request.form.getlist('uid')[0]
-  username = request.form.getlist('username')[0]
-  return jsonify(database_interactions.user_exists(uid, username))
+    @app.post('/api/password')
+    def change_password():
+        uid = require_user()
+        rate_limit('password', 10)
+        data = payload()
+        if not check_password_hash(g.user['password_hash'], text(data, 'current_password', 256, True)):
+            abort(401, 'Incorrect current password.')
+        new_hash = generate_password_hash(password(data))
+        with get_db() as db:
+            db.execute('UPDATE users SET password_hash=? WHERE id=?', (new_hash, uid))
+            db.execute('DELETE FROM sessions WHERE user_id=?', (uid,))
+        sign_in(uid)
+        return jsonify(ok=True)
 
-@app.route('/usernameExists', methods=['POST'])
-def usernameExists():
-  username = request.form.getlist('username')[0]
-  return database_interactions.username_exists(username)
+    @app.get('/api/state')
+    def state():
+        uid = require_user()
+        times = {}
+        for row in get_db().execute('SELECT * FROM solves WHERE user_id=? ORDER BY id', (uid,)):
+            times.setdefault('session' + str(row['session']), {})[f"{row['id']:016d}"] = '|'.join(str(row[key]) for key in ('category', 'time', 'scramble', 'penalty', 'solved_at', 'comment'))
+        profile = public_user(g.user)
+        profile['settings'] = g.user['settings']
+        return jsonify(users={uid: profile}, times={uid: times})
 
-@app.route('/getEmail', methods=['POST'])
-def getEmail():
-  username = request.form.getlist('username')[0]
-  return database_interactions.get_email(username)
+    def insert_solve(uid, number, category, duration, scramble, penalty, date, comment=''):
+        get_db().execute('INSERT INTO solves(user_id,session,category,time,scramble,penalty,solved_at,comment) VALUES (?,?,?,?,?,?,?,?)',
+            (uid, integer(number, 1, 10000), safe_field(category, 40), integer(duration, 0, 86400000), safe_field(scramble, 5000), integer(penalty, 0, 2), integer(date), safe_field(comment, 500)))
 
-@app.route('/createUser', methods=['POST'])
-def createUser():
-  uid = request.form.getlist('uid')[0]
-  email = request.form.getlist('email')[0]
-  location = request.form.getlist('location')[0]
-  phone = request.form.getlist('phone')[0]
-  photoURL = request.form.getlist('photoURL')[0]
-  username = request.form.getlist('username')[0]
-  return database_interactions.create_user(uid, email, location, phone, username, photoURL)
+    @app.post('/saveTime')
+    def save_time():
+        uid = require_user()
+        data = request.form
+        with get_db():
+            insert_solve(uid, data.get('session'), data.get('category'), data.get('time'), data.get('scramble'), data.get('plus_two'), data.get('solve_date'))
+        return 'saved time'
 
-@app.errorhandler(404)
-def page_not_found(e):
-  return render_template('404.html'), 404
+    @app.post('/uploadSolves')
+    def upload_solves():
+        uid = require_user()
+        try:
+            rows = json.loads(request.form.get('solves', ''))
+        except (ValueError, TypeError):
+            abort(400, 'Invalid solve import.')
+        if not isinstance(rows, list) or not 2 <= len(rows) <= 10002:
+            abort(400, 'Import up to 10,000 solves at a time.')
+        with get_db():
+            for row in rows[2:]:
+                if not isinstance(row, list) or not 4 <= len(row) <= 5:
+                    abort(400, 'Invalid solve row.')
+                insert_solve(uid, rows[0], rows[1], row[0], row[1], row[2], row[3], row[4] if len(row) == 5 else '')
+        return 'Done!'
 
-@app.route('/js/<path:path>')
-def send_js(path):
-  return send_from_directory('js', path)
+    @app.post('/deleteSolve')
+    @app.post('/penalizeSolve')
+    def modify_solve():
+        uid = require_user()
+        try:
+            key = int(request.form.get('key', ''))
+        except ValueError:
+            abort(400, 'Invalid solve key.')
+        number = integer(request.form.get('session'), 1, 10000)
+        row = get_db().execute('SELECT penalty FROM solves WHERE id=? AND user_id=? AND session=?', (key, uid, number)).fetchone()
+        if row is None:
+            abort(404, 'Solve not found.')
+        with get_db() as db:
+            if request.path == '/deleteSolve':
+                db.execute('DELETE FROM solves WHERE id=? AND user_id=?', (key, uid))
+                return 'Deleted solve.'
+            penalty = integer(request.form.get('penalty'), 1, 2)
+            db.execute('UPDATE solves SET penalty=? WHERE id=? AND user_id=?', (penalty if row['penalty'] == 0 else 0, key, uid))
+        return 'Done!'
 
-@app.route('/css/<path:path>')
-def send_css(path):
-  return send_from_directory('css', path)
+    @app.post('/deleteSession')
+    def delete_session():
+        uid = require_user()
+        number = integer(request.form.get('session'), 1, 10000)
+        with get_db() as db:
+            db.execute('DELETE FROM solves WHERE user_id=? AND session=?', (uid, number))
+        return 'Deleted session.'
 
-@app.route('/images/<path:path>')
-def send_images(path):
-  return send_from_directory('images', path)
+    @app.post('/saveSettings')
+    def save_settings():
+        uid = require_user()
+        settings = text(request.form, 'settings', 20000, True)
+        with get_db() as db:
+            db.execute('UPDATE users SET settings=? WHERE id=?', (settings, uid))
+        return 'Saved settings'
 
-@app.route('/videos/<path:path>')
-def send_videos(path):
-  return send_from_directory('videos', path)
+    @app.post('/sendFeedback')
+    def feedback():
+        rate_limit('feedback', 10, 3600)
+        data = payload()
+        with get_db() as db:
+            db.execute('INSERT INTO feedback(user_id,title,message,created_at) VALUES (?,?,?,?)', (g.user['id'] if g.user else None, text(data, 'title', 200, True), text(data, 'message', 5000, True), int(time.time())))
+        return 'Done!'
 
-@app.route('/audio/<path:path>')
-def send_audio(path):
-  return send_from_directory('audio', path)
+    @app.get('/healthz/revision')
+    def revision():
+        return os.environ.get('RELEASE_SHA', 'development')
 
-@app.route('/fonts/<path:path>')
-def send_fonts(path):
-  return send_from_directory('fonts', path)
+    @app.get('/')
+    @app.get('/<page>')
+    def page(page='index'):
+        if page in ('index', 'solve', 'timer', 'installpwa', 'contactMe', 'signin', 'signup', 'profile', 'recover'):
+            return render_template(page + '.html')
+        if page in ('sw.js', 'firebase-messaging-sw.js', 'manifest.json', 'manifest1.json', 'sitemap.xml'):
+            return send_from_directory(ROOT / 'static', page)
+        abort(404)
 
-@app.route('/firebase-messaging-sw.js')
-def service_worker():
-  return send_from_directory('static', 'firebase-messaging-sw.js')
+    @app.get('/<directory>/<path:filename>')
+    def assets(directory, filename):
+        if directory not in ('js', 'css', 'images', 'videos', 'audio', 'fonts'):
+            abort(404)
+        return send_from_directory(ROOT / directory, filename)
 
-@app.route('/manifest.json')
-def manifest():
-  return send_from_directory('static', 'manifest.json')
-
-@app.route('/manifest1.json')
-def manifest1():
-  return send_from_directory('static', 'manifest1.json')
-
-@app.route('/sitemap.xml')
-def sitemap_xml():
-  return send_from_directory('static', 'sitemap.xml')
-
-if __name__ == '__main__':
-  app.run(debug = True)
+    app.config['DUMMY_PASSWORD_HASH'] = generate_password_hash(secrets.token_urlsafe(24))
+    return app

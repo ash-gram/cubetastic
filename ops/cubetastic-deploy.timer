@@ -1,0 +1,9 @@
+[Unit]
+Description=Check GitHub for Cubetastic updates every five minutes
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+RandomizedDelaySec=20
+Persistent=true
+[Install]
+WantedBy=timers.target
