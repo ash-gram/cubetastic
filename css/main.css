@@ -166,7 +166,8 @@
 
 @font-face {
   font-family: Roboto-Medium;
-  src: url(/fonts/roboto/Roboto-Medium.woff)
+  src: url(/fonts/roboto/Roboto-Medium.woff2) format('woff2');
+  font-display: swap
 }
 
 :root {
