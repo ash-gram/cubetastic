@@ -1,10 +1,12 @@
 @font-face {
+  font-display: swap;
   font-family: 'Acme';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/RrQfboBx-C5_XxrBaw.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Cabin';
   font-style: normal;
   font-weight: 400;
@@ -12,18 +14,21 @@
   src: url(/fonts/vendor/u-4X0qWljRw-PfU81xCKCpdpbgZJl6XFpfEd7eA9BIxxkV2EH7alwg.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Oswald';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/TK3_WkUHHAIjg75cFRf3bXL8LICs1_FvsUZiYA.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Play';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/6aez4K2oVqwIvtU2Gg.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Saira';
   font-style: normal;
   font-weight: 400;

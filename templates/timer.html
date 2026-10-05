@@ -8,34 +8,22 @@
   <meta name="description"
         content="Welcome to Cubetastic Timer! Do solves using TNoodle scrambles, and sign in to sync your times between devices.">
   <title>Cubetastic | Timer</title>
-  <link rel="icon" href="images/icons/icon-512x512.png">
-  <link rel="apple-touch-icon" href="images/icons/icon-512x512.png">
+  <link rel="icon" href="{{ asset('images/icons/icon-512x512.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-512x512.png') }}">
   <link rel="stylesheet"
-        href="/css/vendor/fonts-timer.css">
-  <link rel="stylesheet" href="/css/vendor/fonts-icons.css">
+        href="{{ asset('css/vendor/fonts-timer.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/vendor/fonts-icons.css') }}">
   <link rel="stylesheet"
-        href="/css/vendor/nouislider-11.1.0.min.css">
-  <link rel="stylesheet" href="/css/vendor/video-js-7.1.0.css">
-  <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/timer.css">
+        href="{{ asset('css/vendor/nouislider-11.1.0.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/main.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/timer.css') }}">
   <link rel="manifest" href="manifest.json">
 
 </head>
-<body onload="hideloader()">
-<div id="sk-cube-grid">
-  <div class="sk-cube sk-cube1"></div>
-  <div class="sk-cube sk-cube2"></div>
-  <div class="sk-cube sk-cube3"></div>
-  <div class="sk-cube sk-cube4"></div>
-  <div class="sk-cube sk-cube5"></div>
-  <div class="sk-cube sk-cube6"></div>
-  <div class="sk-cube sk-cube7"></div>
-  <div class="sk-cube sk-cube8"></div>
-  <div class="sk-cube sk-cube9"></div>
-</div>
-<div id="hidden" style="display: none">
+<body>
+<div id="hidden">
   <aside id="sideMenu" class="mdc-drawer mdc-drawer--modal">
-    <div class="mdc-drawer__header"><img src="/images/icons/icon-152x152.png" alt="cubetastic logo">
+    <div class="mdc-drawer__header"><img src="{{ asset('images/icons/icon-152x152.png') }}" alt="cubetastic logo">
       <h3 class="mdc-drawer__title">Cubetastic</h3><h6 class="mdc-drawer__subtitle">Version
         1.4.10</h6></div>
     <div class="mdc-drawer__content">
@@ -157,80 +145,80 @@
           <ul
             class="mdc-image-list mdc-image-list--masonry my-masonry-image-list mdc-image-list--with-text-protection">
             <li class="mdc-image-list__item hide" data-image="/images/evening_light_3840x2160.jpg">
-              <img class="mdc-image-list__image" src="/images/thumbnails/evening_light.png">
+              <img loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/evening_light.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Evening Light, by <a
                 href="https://designuchiha.deviantart.com/">designuchiha</a></span></div>
             </li>
             <li class="mdc-image-list__item hide" data-image="/images/bridge_in_the_forest.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/bridge_in_the_forest.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/bridge_in_the_forest.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Bridge in the Forest, by <a
                 href="https://designuchiha.deviantart.com/">designuchiha</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/forest_mountain.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/forest_mountain.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/forest_mountain.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Forest Mountain, by <a
                 href="https://ncoll36.deviantart.com/">ncoll36</a></span></div>
             </li>
             <li class="mdc-image-list__item hide"
                 data-image="/images/sunset_in_the_forest_7680x4320.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/sunset_in_the_forest.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/sunset_in_the_forest.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Sunset in the Forest, by <a
                 href="https://designuchiha.deviantart.com/">designuchiha</a></span></div>
             </li>
             <li class="mdc-image-list__item hide" data-image="/images/evening_light_1080x1920.jpg">
-              <img class="mdc-image-list__image" src="/images/thumbnails/evening_light_mobile.png">
+              <img loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/evening_light_mobile.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Evening Light - mobile, by <a
                 href="https://designuchiha.deviantart.com/">designuchiha</a></span></div>
             </li>
             <li class="mdc-image-list__item hide"
                 data-image="/images/sunset_in_the_forest_1080x1920.jpg"><img
-              class="mdc-image-list__image"
-              src="/images/thumbnails/sunset_in_the_forest_mobile.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image"
+              src="{{ asset('images/thumbnails/sunset_in_the_forest_mobile.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Sunset in the Forest - mobile, by <a
                 href="https://designuchiha.deviantart.com/">designuchiha</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/mountain_lake.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/mountain_lake.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/mountain_lake.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Mountain Lake, by <a
                 href="https://ncoll36.deviantart.com/">ncoll36</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/work_table.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/work_table.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/work_table.png') }}">
               <div class="mdc-image-list__supporting"><span
                 class="mdc-image-list__label">Work Table</span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/mountain_silhouette.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/mountain_silhouette.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/mountain_silhouette.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Mountain Silhouette</span>
               </div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/clouds_at_dawn.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/clouds_at_dawn.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/clouds_at_dawn.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Clouds At Dawn</span>
               </div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/vincent-guth-aurora.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/aurora_vincent_guth_mobile.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/aurora_vincent_guth_mobile.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Aurora, by <a
                 href="https://unsplash.com/@vingtcent">Vincent Guth</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/lake_at_dawn.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/lake_at_dawn.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/lake_at_dawn.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Lake at Dawn, by <a
                 href="https://www.pexels.com/@blitzboy">Sindre Strøm</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/starry_night.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/starry_night_mobile.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/starry_night_mobile.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Starry Night, by <a
                 href="https://unsplash.com/@henry_be">Enrico</a></span></div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/countryside_cabin.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/countryside_cabin.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/countryside_cabin.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Countryside Cabin</span>
               </div>
             </li>
             <li class="mdc-image-list__item" data-image="/images/stars_timelapse.jpg"><img
-              class="mdc-image-list__image" src="/images/thumbnails/stars_timelapse.png">
+              loading="lazy" decoding="async" class="mdc-image-list__image" src="{{ asset('images/thumbnails/stars_timelapse.png') }}">
               <div class="mdc-image-list__supporting"><span class="mdc-image-list__label">Stars Timelapse, by <a
                 href="https://www.pexels.com/@kubiceknov">Jakub</a></span></div>
             </li>
@@ -529,20 +517,20 @@
       <div class="mdc-dialog__surface"><h2 id="importInfoDialogLabel" class="mdc-dialog__title">How
         do I import solves?</h2>
         <div class="mdc-dialog__content"><h3>Import from csTimer</h3>
-          <video id="importInfoVideo" class="video-js vjs-big-play-centered vjs-16-9" controls
-                 preload="none" data-setup="{}">
-            <source src="/videos/cubetastic_import_solves.webm" type='video/webm'>
-            <source src="/videos/cubetastic_import_solves.mp4" type='video/mp4'>
-            <source src="/videos/cubetastic_import_solves.ogg" type='video/ogg'>
+          <video id="importInfoVideo" class="tutorial-video" controls
+                 preload="none">
+            <source src="{{ asset('videos/cubetastic_import_solves.webm') }}" type='video/webm'>
+            <source src="{{ asset('videos/cubetastic_import_solves.mp4') }}" type='video/mp4'>
+            <source src="{{ asset('videos/cubetastic_import_solves.ogg') }}" type='video/ogg'>
             <p class="vjs-no-js"> To view this video please enable JavaScript, and consider
               upgrading to a web browser that <a href="https://videojs.com/html5-video-support/"
                                                  target="_blank">supports HTML5 video</a></p>
           </video>
           <h3>Import from Twisty Timer</h3>
-          <video id="twistyTimerVideo" class="video-js vjs-big-play-centered" controls
-                 preload="none" data-setup="{}">
-            <source src="/videos/cubetastic_import_from_twisty_timer.webm" type="video/webm">
-            <source src="/videos/cubetastic_import_from_twisty_timer.m4v">
+          <video id="twistyTimerVideo" class="tutorial-video" controls
+                 preload="none">
+            <source src="{{ asset('videos/cubetastic_import_from_twisty_timer.webm') }}" type="video/webm">
+            <source src="{{ asset('videos/cubetastic_import_from_twisty_timer.m4v') }}">
             <p class="vjs-no-js"> To view this video please enable JavaScript, and consider
               upgrading to a web browser that <a href="https://videojs.com/html5-video-support/"
                                                  target="_blank">supports HTML5 video</a></p>
@@ -774,12 +762,12 @@
     <div id="red"></div>
     <div id="green"></div>
     <audio id="8Seconds">
-      <source src="/audio/8_seconds.ogg" type="audio/ogg">
-      <source src="/audio/8_seconds.mp3" type="audio/mp3">
+      <source src="{{ asset('audio/8_seconds.ogg') }}" type="audio/ogg">
+      <source src="{{ asset('audio/8_seconds.mp3') }}" type="audio/mp3">
     </audio>
     <audio id="12Seconds">
-      <source src="/audio/12_seconds.ogg" type="audio/ogg">
-      <source src="/audio/12_seconds.mp3" type="audio/mp3">
+      <source src="{{ asset('audio/12_seconds.ogg') }}" type="audio/ogg">
+      <source src="{{ asset('audio/12_seconds.mp3') }}" type="audio/mp3">
     </audio>
     <div id="categoryButtonGroup" class="button-group">
       <div id="selectCategoryDivision" class="mdc-menu-surface--anchor button-group-left">
@@ -872,24 +860,18 @@
   enable it!
 </noscript>
 </body>
-<script src="/js/vendor/jquery-3.7.1.min.js"></script>
-<script async>if (navigator.serviceWorker.controller) {
-  console.log('Active service worker found, no need to register');
-} else {
-  navigator.serviceWorker.register('sw.js', {scope: './'}).then(function (reg) {
-    console.log('Service worker has been registered for scope:' + reg.scope);
-  });
-}</script>
+<script src="{{ asset('js/vendor/jquery-3.7.1.min.js') }}"></script>
+<script src="{{ asset('js/pwa.js') }}" defer></script>
 <script async>function hideloader() {
   $('#sk-cube-grid').hide();
   $('#hidden').show();
   document.querySelector('#session').scrollTo(0, document.querySelector('#session').scrollHeight);
 }</script>
 
-<script async src="js/tnoodle.js"></script>
-<script src="js/main.js"></script>
-<script src="js/mdc-web.min.js"></script>
-<script src="js/nouislider.min.js"></script>
+<script async src="{{ asset('js/tnoodle.js') }}"></script>
+<script src="{{ asset('js/main.js') }}"></script>
+<script src="{{ asset('js/mdc-web.min.js') }}"></script>
+<script src="{{ asset('js/nouislider.min.js') }}"></script>
 <script async>
   mdc.ripple.MDCRipple.attachTo(document.querySelector('.mdc-button'));
   mdc.ripple.MDCRipple.attachTo(document.querySelector('#editSessions'));
@@ -999,6 +981,6 @@
     $('#scramble').css('top', $('#time h1').offset().top + $('#time h1').height());
   });
 </script>
-<script src="/js/timer.js"></script>
-<script async src="/js/loggedStatus.js"></script>
+<script src="{{ asset('js/timer.js') }}"></script>
+<script async src="{{ asset('js/loggedStatus.js') }}"></script>
 <script>document.addEventListener('DOMContentLoaded', hideloader);</script></html>

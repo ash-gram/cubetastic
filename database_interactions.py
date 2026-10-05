@@ -26,7 +26,33 @@ CREATE TABLE IF NOT EXISTS oauth_identities (
  provider TEXT NOT NULL, subject TEXT NOT NULL, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  email TEXT NOT NULL, PRIMARY KEY(provider,subject), UNIQUE(provider,user_id)
 );
-PRAGMA user_version=2;
+CREATE INDEX IF NOT EXISTS solves_owner_id ON solves(user_id, id);
+CREATE TABLE IF NOT EXISTS state_versions (
+ user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE, revision INTEGER NOT NULL DEFAULT 0
+);
+INSERT OR IGNORE INTO state_versions(user_id) SELECT id FROM users;
+CREATE TRIGGER IF NOT EXISTS user_state_insert AFTER INSERT ON users BEGIN
+ INSERT INTO state_versions(user_id) VALUES (NEW.id);
+END;
+CREATE TRIGGER IF NOT EXISTS user_state_update AFTER UPDATE ON users BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=NEW.id;
+END;
+CREATE TRIGGER IF NOT EXISTS solve_state_insert AFTER INSERT ON solves BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=NEW.user_id;
+END;
+CREATE TRIGGER IF NOT EXISTS solve_state_update AFTER UPDATE ON solves BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=NEW.user_id;
+END;
+CREATE TRIGGER IF NOT EXISTS solve_state_delete AFTER DELETE ON solves BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=OLD.user_id;
+END;
+CREATE TRIGGER IF NOT EXISTS identity_state_insert AFTER INSERT ON oauth_identities BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=NEW.user_id;
+END;
+CREATE TRIGGER IF NOT EXISTS identity_state_delete AFTER DELETE ON oauth_identities BEGIN
+ UPDATE state_versions SET revision=revision+1 WHERE user_id=OLD.user_id;
+END;
+PRAGMA user_version=3;
 '''
 
 def connect(path):

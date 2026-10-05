@@ -1,0 +1,7 @@
+[Unit]
+Description=Deploy Cubetastic when GitHub signals a main push
+[Path]
+PathExists=/var/lib/cubetastic/deploy-request
+Unit=cubetastic-deploy.service
+[Install]
+WantedBy=multi-user.target

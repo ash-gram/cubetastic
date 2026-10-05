@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block title %}Cubetastic | Your profile{% endblock %}
 {% block body %}
-<link rel="stylesheet" href="/css/accounts.css">
+<link rel="stylesheet" href="{{ asset('css/accounts.css') }}">
 <section class="account-card profile-card">
 {% include 'auth-notices.html' %}
 <div class="profile-heading"><div id="profileAvatar" class="profile-avatar" aria-hidden="true">C</div><div><h1 id="accountName">Your profile</h1><p id="accountEmail"></p><span id="signInBadge" class="account-badge"></span></div></div>
@@ -15,14 +15,14 @@
 <label for="bio">About you (optional)</label><textarea id="bio" name="bio" maxlength="500" rows="3"></textarea>
 <button type="submit">Save changes</button><p role="status" aria-live="polite"></p></form>
 <section class="account-section"><h2>Sign-in methods</h2>
-<div id="googleConnected" hidden><div class="provider-row"><img src="/images/google_logo.png" width="24" height="24" alt=""><div><strong>Google connected</strong><p id="googleEmail"></p></div><span class="account-badge">Connected</span></div>
+<div id="googleConnected" hidden><div class="provider-row"><img src="{{ asset('images/google_logo.png') }}" width="24" height="24" alt=""><div><strong>Google connected</strong><p id="googleEmail"></p></div><span class="account-badge">Connected</span></div>
 <p id="googleOnlyHint" hidden>Sign in with Google to access this account. Your password and account recovery are managed by Google.</p>
 <form id="disconnectGoogle" hidden onsubmit="submitAccount(event, '/api/google/unlink')"><label for="unlinkPassword">Current Cubetastic password</label><input id="unlinkPassword" name="password" type="password" autocomplete="current-password" maxlength="256"><button type="submit" class="secondary-button">Disconnect Google</button><p role="status" aria-live="polite"></p></form></div>
-<div id="googleNotConnected" hidden>{% if google_enabled %}<p>Connect the Google account with the same email to sign in without entering your Cubetastic password.</p><a class="google-button" href="/auth/google/start?link=1"><img src="/images/google_logo.png" width="20" height="20" alt="">Connect Google</a>{% else %}<p>You sign in with your Cubetastic password.</p>{% endif %}</div></section>
+<div id="googleNotConnected" hidden>{% if google_enabled %}<p>Connect the Google account with the same email to sign in without entering your Cubetastic password.</p><a class="google-button" href="/auth/google/start?link=1"><img src="{{ asset('images/google_logo.png') }}" width="20" height="20" alt="">Connect Google</a>{% else %}<p>You sign in with your Cubetastic password.</p>{% endif %}</div></section>
 <section id="passwordSection" class="account-section" hidden><h2>Change password</h2><form onsubmit="submitAccount(event, '/api/password')">
 <label for="current_password">Current password</label><input id="current_password" name="current_password" type="password" autocomplete="current-password" required maxlength="256">
 <label for="password">New password (at least 12 characters)</label><input id="password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="256" required>
 <button type="submit">Change password</button><p role="status" aria-live="polite"></p></form></section>
 </section>
 {% endblock %}
-{% block javascript %}<script src="/js/profile.js"></script>{% endblock %}
+{% block javascript %}<script src="{{ asset('js/profile.js') }}"></script>{% endblock %}

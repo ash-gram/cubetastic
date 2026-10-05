@@ -1,10 +1,12 @@
 @font-face {
+  font-display: swap;
   font-family: 'Black Han Sans';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/ea8Aad44WunzF9a-dL6toA8r8kqSK3A.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Cabin';
   font-style: normal;
   font-weight: 400;
@@ -12,24 +14,28 @@
   src: url(/fonts/vendor/u-4X0qWljRw-PfU81xCKCpdpbgZJl6XFpfEd7eA9BIxxkV2EH7alwg.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Contrail One';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/eLGbP-j_JA-kG0_Zo51noaftYkHp.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Copse';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/11hPGpDKz1rGb3dkFEw.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Iceberg';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/8QIJdijAiM7o-qnZiI8Erw.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Noto Sans';
   font-style: normal;
   font-weight: 400;
@@ -37,12 +43,14 @@
   src: url(/fonts/vendor/o-0mIpQlx3QUlC5A4PNB6Ryti20_6n1iPHjcz6L1SoM-jCpoiyD9A-9a6Vc.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Play';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/6aez4K2oVqwIvtU2Gg.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Saira';
   font-style: normal;
   font-weight: 400;
@@ -50,24 +58,28 @@
   src: url(/fonts/vendor/memWYa2wxmKQyPMrZX79wwYZQMhsyuShhKMjjbU9uXuA71rCks8xkw.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Share Tech Mono';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/J7aHnp1uDWRBEqV98dVQztYldFcLowEA.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Space Mono';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/i7dPIFZifjKcF5UAWdDRYEF8QA.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Titillium Web';
   font-style: normal;
   font-weight: 400;
   src: url(/fonts/vendor/NaPecZTIAOhVxoMyOr9n_E7fdMPmCA.ttf) format('truetype');
 }
 @font-face {
+  font-display: swap;
   font-family: 'Unica One';
   font-style: normal;
   font-weight: 400;

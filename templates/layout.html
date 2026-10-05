@@ -8,33 +8,22 @@
   <meta name="description"
         content="Welcome to Cubetastic, a website all about cubing! The timer page has a timer that can store your times, so that you can access it from all devices. There is also a trainer you can try!">
   <title>{% block title %}{% endblock %}</title>
-  <link rel="icon" href="images/icons/icon-512x512.png">
-  <link rel="apple-touch-icon" href="images/icons/icon-512x512.png">
+  <link rel="icon" href="{{ asset('images/icons/icon-512x512.png') }}">
+  <link rel="apple-touch-icon" href="{{ asset('images/icons/icon-512x512.png') }}">
   <link rel="stylesheet"
-        href="/css/vendor/fonts-layout.css">
-  <link rel="stylesheet" href="/css/vendor/fonts-icons.css">
+        href="{{ asset('css/vendor/fonts-layout.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/vendor/fonts-icons.css') }}">
   <link rel="stylesheet"
-        href="/css/vendor/animate-3.5.2.min.css">
-  <link rel="stylesheet" href="css/main.css">
+        href="{{ asset('css/vendor/animate-3.5.2.min.css') }}">
+  <link rel="stylesheet" href="{{ asset('css/main.css') }}">
   <link rel="manifest" href="manifest1.json">
 
 </head>
-<body onload="hideloader()">
-<div id="sk-cube-grid">
-  <div class="sk-cube sk-cube1"></div>
-  <div class="sk-cube sk-cube2"></div>
-  <div class="sk-cube sk-cube3"></div>
-  <div class="sk-cube sk-cube4"></div>
-  <div class="sk-cube sk-cube5"></div>
-  <div class="sk-cube sk-cube6"></div>
-  <div class="sk-cube sk-cube7"></div>
-  <div class="sk-cube sk-cube8"></div>
-  <div class="sk-cube sk-cube9"></div>
-</div>
-<div id="hidden" style="display: none">
+<body>
+<div id="hidden">
   <aside id="sideMenu" class="mdc-drawer mdc-drawer--modal mdc-typography">
     <header class="mdc-drawer__header mdc-theme--on-primary mdc-theme--primary-bg"><img
-      src="/images/icons/icon-152x152.png" alt="cubetastic logo">
+      src="{{ asset('images/icons/icon-152x152.png') }}" alt="cubetastic logo">
       <h3 class="mdc-drawer__title">Cubetastic</h3><h6 class="mdc-drawer__subtitle">Version
         1.4.11</h6></header>
     <nav class="mdc-drawer__content mdc-list-group">
@@ -72,22 +61,16 @@
   it!
 </noscript>
 </body>
-<script>if (navigator.serviceWorker.controller) {
-  console.log('Active service worker found, no need to register');
-} else {
-  navigator.serviceWorker.register('sw.js', {scope: './'}).then(function (reg) {
-    console.log('Service worker has been registered for scope:' + reg.scope);
-  });
-}</script>
-<script src="/js/vendor/jquery-3.7.1.min.js"></script>
+<script src="{{ asset('js/pwa.js') }}" defer></script>
+<script src="{{ asset('js/vendor/jquery-3.7.1.min.js') }}"></script>
 <script>function hideloader() {
   $('#sk-cube-grid').hide();
   $('#hidden').show();
 }</script>
 
-<script src="/js/main.js"></script>
+<script src="{{ asset('js/main.js') }}"></script>
 <script
-  src="/js/vendor/material-components-web-14.0.0.min.js"></script>
+  src="{{ asset('js/vendor/material-components-web-14.0.0.min.js') }}"></script>
 <script>
   mdc.topAppBar.MDCTopAppBar.attachTo(document.querySelector('.mdc-top-app-bar'));
   var drawer = new mdc.drawer.MDCDrawer(document.querySelector('.mdc-drawer--modal'));
@@ -100,4 +83,4 @@
   };
   const snackbar = new mdc.snackbar.MDCSnackbar(document.querySelector('.mdc-snackbar'));
 </script>
-<script src="js/loggedStatus.js"></script> {% block javascript %} {% endblock %}<script>document.addEventListener('DOMContentLoaded', hideloader);</script></html>
+<script src="{{ asset('js/loggedStatus.js') }}"></script> {% block javascript %} {% endblock %}<script>document.addEventListener('DOMContentLoaded', hideloader);</script></html>

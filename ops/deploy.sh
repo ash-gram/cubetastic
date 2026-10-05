@@ -3,11 +3,12 @@ set -euo pipefail
 umask 022
 exec 9>/run/lock/cubetastic-deploy.lock
 flock -n 9 || exit 0
+rm -f /var/lib/cubetastic/deploy-request
 source_dir=/opt/cubetastic/source
 cd "$source_dir"
 [[ $(git remote get-url origin) == https://github.com/ash-gram/cubetastic.git ]]
-git fetch --quiet origin master
-revision=$(git rev-parse origin/master)
+git fetch --quiet origin main
+revision=$(git rev-parse origin/main)
 [[ $revision =~ ^[a-f0-9]{40}$ ]]
 previous=''
 if [[ -L /opt/cubetastic/current ]]; then previous=$(readlink -f /opt/cubetastic/current); fi
@@ -42,6 +43,7 @@ runuser -u cubetastic-build -- "$release/.venv/bin/pip" install --disable-pip-ve
 (cd "$release" && runuser -u cubetastic-build -- .venv/bin/python -m unittest discover -s tests -v)
 for script in main profile loggedStatus timer; do node --check "$release/js/$script.js"; done
 bash -n "$release/ops/deploy.sh" "$release/ops/bootstrap.sh"
+runuser -u cubetastic-build -- "$release/.venv/bin/python" "$release/ops/build_assets.py"
 chown -R root:root "$release"
 chmod -R go-w "$release"
 runuser -u cubetastic -- "$release/.venv/bin/gunicorn" --version

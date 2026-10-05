@@ -1,7 +1,7 @@
 name: Test and sync upstream
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
   schedule:
     - cron: '23 * * * *'
@@ -62,4 +62,4 @@ jobs:
           if (( $(date +%s) - $(git log -1 --format=%ct) > 30 * 86400 )); then
             git commit --allow-empty -m 'Keep the verified upstream update schedule active'
           fi
-          git push origin HEAD:master
+          git push origin HEAD:main

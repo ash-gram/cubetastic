@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% block title %}Cubetastic | Feedback{% endblock %}
 {% block body %}
-<link rel="stylesheet" href="/css/accounts.css">
+<link rel="stylesheet" href="{{ asset('css/accounts.css') }}">
 <section class="account-card"><h1>Share feedback</h1><p>Your feedback is saved on this Cubetastic server for its operator.</p>
 <form id="feedbackForm"><label for="title">Title</label><input id="title" name="title" required maxlength="200">
 <label for="message">Message</label><textarea id="message" name="message" required maxlength="5000" rows="6"></textarea>

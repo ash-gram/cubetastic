@@ -19,7 +19,6 @@ account.ready = Promise.all([
   }).catch(() => ({user: null, csrf: ''})),
   new Promise(resolve => document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', resolve, {once: true}) : resolve())
 ]).then(([data]) => {
-  account.currentUser = data.user;
   account.csrf = data.csrf;
   // Session names and display preferences are device-local, separated by account.
   const owner = data.user ? data.user.uid : 'guest';
@@ -36,10 +35,11 @@ account.ready = Promise.all([
     return new Promise(() => {});
   }
   localStorage.setItem('cubetastic.preferencesOwner', owner);
+  account.currentUser = data.user;
 });
 
 const stateListeners = new Map();
-let cachedState = {}, statePromise = null;
+let cachedState = {}, statePromise = null, stateETag = null, stateDirty = false;
 function snapshot(value, key) {
   return {key, val: () => value === undefined ? null : value,
     child: name => snapshot(value && value[name], name),
@@ -57,15 +57,23 @@ function readState(path, limit, end) {
   }
   return snapshot(value, path.split('/').pop());
 }
-async function refreshState() {
+async function refreshState(force = false) {
   if (!account.currentUser) return;
-  if (statePromise) return statePromise;
-  statePromise = account.request('/api/state').then(state => {
+  if (statePromise) { if (force) stateDirty = true; return statePromise; }
+  statePromise = fetch('/api/state', {cache: 'no-store', credentials: 'same-origin',
+    headers: stateETag ? {'If-None-Match': stateETag} : {}}).then(async response => {
+    if (response.status === 304) return;
+    if (!response.ok) throw new Error('Could not sync your solves. Please retry.');
+    const state = await response.json();
+    stateETag = response.headers.get('ETag');
     cachedState = state;
     for (const listener of [...stateListeners.values()]) listener();
   }).catch(error => {
     if (typeof snackbar !== 'undefined') snackbar.show({message: error.message});
-  }).finally(() => { statePromise = null; });
+  }).finally(() => {
+    statePromise = null;
+    if (stateDirty) { stateDirty = false; refreshState(); }
+  });
   return statePromise;
 }
 window.solveStore = {ref(path) {
@@ -101,13 +109,17 @@ window.solveStore = {ref(path) {
   };
   return query;
 }};
-setInterval(() => { if (!document.hidden) refreshState(); }, 10000);
-window.addEventListener('focus', () => refreshState());
+function syncVisibleTimer() {
+  if (!document.hidden && stateListeners.size && !window.timerRunning) refreshState();
+}
+setInterval(syncVisibleTimer, 30000);
+window.addEventListener('focus', syncVisibleTimer);
+document.addEventListener('visibilitychange', syncVisibleTimer);
 $.ajaxPrefilter(function(options, original, xhr) {
   if (!options.crossDomain && !/^(GET|HEAD|OPTIONS)$/i.test(options.type)) xhr.setRequestHeader('X-CSRF-Token', account.csrf);
 });
 $(document).ajaxSuccess((event, xhr, settings) => {
-  if (settings.type === 'POST') refreshState();
+  if (settings.type === 'POST' && stateListeners.size) refreshState(true);
 });
 $(document).ajaxError((event, xhr) => {
   const message = xhr.responseJSON?.error || 'Could not save. Check your connection and retry.';

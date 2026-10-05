@@ -14,6 +14,8 @@ if [[ ! -s /etc/cubetastic/app.env ]]; then
   python3 -c 'import secrets; print("SECRET_KEY="+secrets.token_urlsafe(48)); print("DATABASE_PATH=/var/lib/cubetastic/cubetastic.sqlite3\nCOOKIE_SECURE=1\nTRUST_PROXY=1")' > /etc/cubetastic/app.env
   )
 fi
+python3 ops/webhook_setup.py
+install -m 644 ops/cubetastic-deploy.path /etc/systemd/system/
 install -m 644 ops/cubetastic.service /etc/systemd/system/cubetastic.service
 install -m 644 ops/cubetastic-deploy.service ops/cubetastic-deploy.timer ops/cubetastic-backup.service ops/cubetastic-backup.timer /etc/systemd/system/
 install -m 755 ops/deploy.sh /usr/local/sbin/cubetastic-deploy
@@ -31,6 +33,6 @@ install -m 644 ops/nginx.conf /etc/nginx/sites-available/cubetastic
 ln -sfn /etc/nginx/sites-available/cubetastic /etc/nginx/sites-enabled/cubetastic
 nginx -t
 systemctl reload nginx
-systemctl enable --now cubetastic cubetastic-deploy.timer cubetastic-backup.timer
+systemctl enable --now cubetastic cubetastic-deploy.path cubetastic-deploy.timer cubetastic-backup.timer
 systemctl start cubetastic-backup.service
 curl --fail --silent --show-error https://cubetastic.duckdns.org/healthz

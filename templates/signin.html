@@ -1,14 +1,14 @@
 {% extends 'layout.html' %}
 {% block title %}Cubetastic | Sign in{% endblock %}
 {% block body %}
-<link rel="stylesheet" href="/css/accounts.css">
+<link rel="stylesheet" href="{{ asset('css/accounts.css') }}">
 <section class="account-card"><h1>Welcome back</h1><p>Sign in to sync your solves across devices.</p>
 {% include 'auth-notices.html' %}
-{% if google_enabled %}<a class="google-button" href="/auth/google/start"><img src="/images/google_logo.png" width="20" height="20" alt="">Continue with Google</a><div class="auth-divider"><span>or use email</span></div>{% endif %}
+{% if google_enabled %}<a class="google-button" href="/auth/google/start"><img src="{{ asset('images/google_logo.png') }}" width="20" height="20" alt="">Continue with Google</a><div class="auth-divider"><span>or use email</span></div>{% endif %}
 <form onsubmit="submitAccount(event, '/api/login')">
 <label for="username">Username or email</label><input id="username" name="username" autocomplete="username" required>
 <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required maxlength="256">
 <button type="submit">Sign in</button><p role="status" aria-live="polite"></p>
 </form><p><a href="/recover">Recover your account</a> · <a href="/signup">Create an account</a></p><p><a href="/timer">Use the timer without an account</a></p></section>
 {% endblock %}
-{% block javascript %}<script src="/js/profile.js"></script>{% endblock %}
+{% block javascript %}<script src="{{ asset('js/profile.js') }}"></script>{% endblock %}

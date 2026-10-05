@@ -117,6 +117,8 @@ def create_app(config=None):
     @app.before_request
     def authenticate():
         g.user = None
+        if request.endpoint in ('assets', 'versioned_asset', 'static', 'service_worker', 'github_push'):
+            return
         token = session.get('token')
         if token:
             g.user = get_db().execute('SELECT users.* FROM sessions JOIN users ON users.id=sessions.user_id WHERE token_hash=? AND expires>?', (digest(token), int(time.time()))).fetchone()
@@ -254,12 +256,20 @@ def create_app(config=None):
     @app.get('/api/state')
     def state():
         uid = require_user()
+        row = get_db().execute('SELECT revision FROM state_versions WHERE user_id=?', (uid,)).fetchone()
+        etag = digest(uid + ':' + str(row['revision'] if row else 0))
+        if request.if_none_match.contains(etag):
+            response = app.response_class(status=304)
+            response.set_etag(etag)
+            return response
         times = {}
         for row in get_db().execute('SELECT * FROM solves WHERE user_id=? ORDER BY id', (uid,)):
             times.setdefault('session' + str(row['session']), {})[f"{row['id']:016d}"] = '|'.join(str(row[key]) for key in ('category', 'time', 'scramble', 'penalty', 'solved_at', 'comment'))
         profile = public_user(g.user)
         profile['settings'] = g.user['settings']
-        return jsonify(users={uid: profile}, times={uid: times})
+        response = jsonify(users={uid: profile}, times={uid: times})
+        response.set_etag(etag)
+        return response
 
     def insert_solve(uid, number, category, duration, scramble, penalty, date, comment=''):
         get_db().execute('INSERT INTO solves(user_id,session,category,time,scramble,penalty,solved_at,comment) VALUES (?,?,?,?,?,?,?,?)',
@@ -355,6 +365,8 @@ def create_app(config=None):
         return send_from_directory(ROOT / directory, filename)
 
     app.config['DUMMY_PASSWORD_HASH'] = generate_password_hash(secrets.token_urlsafe(24))
+    from delivery import init_delivery
+    init_delivery(app, ROOT)
     from google_auth import init_google
     init_google(app, sign_in, rate_limit)
     return app
